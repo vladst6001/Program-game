@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { init, backButton } from '@telegram-apps/sdk';
 import App from './App';
 import './styles/globals.css';
 
-init();
-backButton.mount();
+import('@telegram-apps/sdk').then((sdk) => {
+  try { sdk.init(); } catch {}
+  try { sdk.backButton.mount(); } catch {}
+}).catch(() => {});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -235,7 +235,7 @@ const TOOLBOX: Blockly.utils.toolbox.ToolboxDefinition = {
   ],
 };
 
-const GENERATORS: Record<string, (block: Blockly.Block) => string> = {
+const GENERATORS: Record<string, (block: Blockly.Block) => string | (string | number)[]> = {
   event_on_start: (block) => {
     const stmts = javascriptGenerator.statementToCode(block, 'DO');
     return `// === При старте ===\nfunction onStart() {\n${stmts}}\n\nonStart();\n`;
@@ -322,7 +322,7 @@ export default function BlocklyWorkspace({ onCodeGenerated }: BlocklyWorkspacePr
     if (!ws) return '';
 
     for (const [name, fn] of Object.entries(GENERATORS)) {
-      javascriptGenerator.forBlock[name] = fn;
+      (javascriptGenerator.forBlock as any)[name] = fn;
     }
 
     javascriptGenerator.forBlock['controls_if'] = (block) => {

@@ -44,9 +44,9 @@ export default function GalleryPage() {
     setPage(1);
     setHasMore(true);
     const req = tab === 'popular' ? galleryApi.getPopular() : galleryApi.getRecent();
-    req.then(({ data }) => {
-      setGames(data.games);
-      setHasMore(data.games.length >= 20);
+    req.then((response) => {
+      setGames(response.data.games || []);
+      setHasMore((response.data.games || []).length >= 20);
     }).finally(() => setLoading(false));
   }, [tab]);
 
@@ -55,11 +55,10 @@ export default function GalleryPage() {
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const { data } = tab === 'popular' ? galleryApi.getPopular() : galleryApi.getRecent();
-      const response = await data;
-      setGames((prev) => [...prev, ...(response.games || [])]);
+      const response = await (tab === 'popular' ? galleryApi.getPopular() : galleryApi.getRecent());
+      setGames(response.data.games || []);
       setPage(nextPage);
-      if ((response.games || []).length < 20) setHasMore(false);
+      if ((response.data.games || []).length < 20) setHasMore(false);
     } catch {
       setHasMore(false);
     }

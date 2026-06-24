@@ -11,6 +11,22 @@ from app.schemas.game import GameResponse
 router = APIRouter(prefix="/api/gallery", tags=["gallery"])
 
 
+@router.get("/popular")
+async def list_popular_games(db: AsyncSession = Depends(get_db)):
+    query = select(Game).where(Game.is_published == True).order_by(Game.likes.desc()).limit(20)
+    result = await db.execute(query)
+    games = result.scalars().all()
+    return {"games": [GameResponse.model_validate(g).model_dump() for g in games]}
+
+
+@router.get("/recent")
+async def list_recent_games(db: AsyncSession = Depends(get_db)):
+    query = select(Game).where(Game.is_published == True).order_by(Game.created_at.desc()).limit(20)
+    result = await db.execute(query)
+    games = result.scalars().all()
+    return {"games": [GameResponse.model_validate(g).model_dump() for g in games]}
+
+
 @router.get("")
 async def list_published_games(
     page: int = Query(1, ge=1),
