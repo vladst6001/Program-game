@@ -3,7 +3,7 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 
 from handlers import (
     code_router,
@@ -27,7 +27,7 @@ async def main():
         logger.error("TELEGRAM_BOT_TOKEN not set")
         return
 
-    bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode=ParseMode.HTML)
+    bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher()
 
     dp.message.middleware(AuthMiddleware())

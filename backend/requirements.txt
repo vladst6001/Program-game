@@ -10,6 +10,7 @@ aiogram
 aiohttp
 pydantic
 pydantic-settings
+email-validator
 python-dotenv
 websockets
 aiofiles
