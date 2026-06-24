@@ -1,13 +1,9 @@
-from app.routers import auth, friends, games, gallery, messages, sessions, sprites, tutorials, ws
-
-__all__ = [
-    "auth",
-    "friends",
-    "games",
-    "gallery",
-    "messages",
-    "sessions",
-    "sprites",
-    "tutorials",
-    "ws",
-]
+from app.routers.auth import router as auth
+from app.routers.friends import router as friends
+from app.routers.games import router as games
+from app.routers.gallery import router as gallery
+from app.routers.messages import router as messages
+from app.routers.sessions import router as sessions
+from app.routers.sprites import router as sprites
+from app.routers.tutorials import router as tutorials
+from app.routers.ws import router as ws
