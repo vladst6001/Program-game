@@ -2,8 +2,8 @@ import asyncio
 import logging
 import os
 import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 
@@ -24,15 +24,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def health_handler(request):
-    return web.json_response({"status": "ok"})
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status": "ok"}')
+
+    def log_message(self, format, *args):
+        pass
 
 
 def start_http_server():
-    app = web.Application()
-    app.router.add_get("/", health_handler)
-    app.router.add_get("/health", health_handler)
-    threading.Thread(target=lambda: asyncio.run(web.run_app(app, port=8080)), daemon=True).start()
+    server = HTTPServer(("0.0.0.0", 8080), HealthHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    logger.info("Health server started on port 8080")
 
 
 async def main():
