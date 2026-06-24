@@ -1,7 +1,9 @@
 import asyncio
 import logging
 import os
+import threading
 
+from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 
@@ -22,10 +24,23 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+async def health_handler(request):
+    return web.json_response({"status": "ok"})
+
+
+def start_http_server():
+    app = web.Application()
+    app.router.add_get("/", health_handler)
+    app.router.add_get("/health", health_handler)
+    threading.Thread(target=lambda: asyncio.run(web.run_app(app, port=8080)), daemon=True).start()
+
+
 async def main():
     if not TELEGRAM_BOT_TOKEN:
         logger.error("TELEGRAM_BOT_TOKEN not set")
         return
+
+    start_http_server()
 
     bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher()

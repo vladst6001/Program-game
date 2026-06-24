@@ -41,15 +41,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(games.router)
-app.include_router(sprites.router)
-app.include_router(friends.router)
-app.include_router(messages.router)
-app.include_router(gallery.router)
-app.include_router(tutorials.router)
-app.include_router(sessions.router)
-app.include_router(ws.router)
+app.include_router(auth)
+app.include_router(games)
+app.include_router(sprites)
+app.include_router(friends)
+app.include_router(messages)
+app.include_router(gallery)
+app.include_router(tutorials)
+app.include_router(sessions)
+app.include_router(ws)
 
 
 @app.get("/health")
