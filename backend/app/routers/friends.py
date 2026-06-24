@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.friend import Friend, FriendStatus
+from app.models.friend import Friend
 from app.models.user import User
 from app.schemas.friend import FriendAddRequest, FriendListResponse, FriendResponse
 
@@ -47,7 +47,7 @@ async def send_friend_request(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Friend request already exists")
 
-    friend = Friend(user_id=user.id, friend_id=target_user.id, status=FriendStatus.pending.value)
+    friend = Friend(user_id=user.id, friend_id=target_user.id, status="pending")
     db.add(friend)
     await db.flush()
 
@@ -67,16 +67,16 @@ async def accept_friend_request(
         select(Friend).where(
             Friend.user_id == request.user_id,
             Friend.friend_id == user.id,
-            Friend.status == FriendStatus.pending.value,
+            Friend.status == "pending",
         )
     )
     friend = result.scalar_one_or_none()
     if not friend:
         raise HTTPException(status_code=404, detail="Friend request not found")
 
-    friend.status = FriendStatus.confirmed.value
+    friend.status = "confirmed"
 
-    reverse = Friend(user_id=user.id, friend_id=request.user_id, status=FriendStatus.confirmed.value)
+    reverse = Friend(user_id=user.id, friend_id=request.user_id, status="confirmed")
     db.add(reverse)
 
     user.friends_count += 1
@@ -102,7 +102,7 @@ async def reject_friend_request(
         select(Friend).where(
             Friend.user_id == request.user_id,
             Friend.friend_id == user.id,
-            Friend.status == FriendStatus.pending.value,
+            Friend.status == "pending",
         )
     )
     friend = result.scalar_one_or_none()
@@ -122,8 +122,8 @@ async def list_friends(
     result = await db.execute(
         select(Friend).where(
             or_(
-                (Friend.user_id == user.id) & (Friend.status == FriendStatus.confirmed.value),
-                (Friend.friend_id == user.id) & (Friend.status == FriendStatus.confirmed.value),
+                (Friend.user_id == user.id) & (Friend.status == "confirmed"),
+                (Friend.friend_id == user.id) & (Friend.status == "confirmed"),
             )
         )
     )

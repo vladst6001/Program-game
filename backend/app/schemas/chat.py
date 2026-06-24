@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -10,9 +9,9 @@ class ChatMessageSendRequest(BaseModel):
 
 
 class ChatMessageResponse(BaseModel):
-    id: uuid.UUID
-    session_id: uuid.UUID
-    sender_id: uuid.UUID
+    id: str
+    session_id: str
+    sender_id: str
     text: str | None
     voice_url: str | None
     created_at: datetime

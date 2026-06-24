@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +13,7 @@ router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_session(
-    game_id: uuid.UUID,
+    game_id: str,
     max_players: int = 8,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -45,7 +43,7 @@ async def create_session(
 
 @router.post("/{session_id}/join")
 async def join_session(
-    session_id: uuid.UUID,
+    session_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -74,7 +72,7 @@ async def join_session(
 
 @router.post("/{session_id}/leave")
 async def leave_session(
-    session_id: uuid.UUID,
+    session_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -99,7 +97,7 @@ async def leave_session(
 
 @router.get("/{session_id}")
 async def get_session(
-    session_id: uuid.UUID,
+    session_id: str,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(GameSession).where(GameSession.id == session_id))

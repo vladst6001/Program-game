@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -14,9 +13,9 @@ class GameUpdate(BaseModel):
 
 
 class GameResponse(BaseModel):
-    id: uuid.UUID
+    id: str
     name: str
-    author_id: uuid.UUID
+    author_id: str
     code: dict
     is_published: bool
     likes: int
@@ -32,4 +31,4 @@ class GameListResponse(BaseModel):
 
 class PublishResponse(BaseModel):
     success: bool
-    game_id: uuid.UUID
+    game_id: str

@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
@@ -15,7 +13,7 @@ from app.schemas.game import GameResponse
 router = APIRouter(prefix="/api/games/{game_id}/sprites", tags=["sprites"])
 
 
-async def _get_game_owner(game_id: uuid.UUID, user: User, db: AsyncSession) -> Game:
+async def _get_game_owner(game_id: str, user: User, db: AsyncSession) -> Game:
     result = await db.execute(select(Game).where(Game.id == game_id))
     game = result.scalar_one_or_none()
     if not game:
@@ -27,7 +25,7 @@ async def _get_game_owner(game_id: uuid.UUID, user: User, db: AsyncSession) -> G
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def upload_sprite(
-    game_id: uuid.UUID,
+    game_id: str,
     file: UploadFile,
     name: str = "",
     user: User = Depends(get_current_user),
@@ -62,7 +60,7 @@ async def upload_sprite(
 
 @router.get("")
 async def list_sprites(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -87,8 +85,8 @@ async def list_sprites(
 
 @router.delete("/{sprite_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_sprite(
-    game_id: uuid.UUID,
-    sprite_id: uuid.UUID,
+    game_id: str,
+    sprite_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

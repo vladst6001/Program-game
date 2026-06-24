@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +45,7 @@ async def list_my_games(
 
 @router.get("/{game_id}", response_model=GameResponse)
 async def get_game(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -62,7 +60,7 @@ async def get_game(
 
 @router.put("/{game_id}", response_model=GameResponse)
 async def update_game(
-    game_id: uuid.UUID,
+    game_id: str,
     request: GameUpdate,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -86,7 +84,7 @@ async def update_game(
 
 @router.delete("/{game_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_game(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -103,7 +101,7 @@ async def delete_game(
 
 @router.post("/{game_id}/publish", response_model=PublishResponse)
 async def publish_game(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -121,7 +119,7 @@ async def publish_game(
 
 @router.post("/{game_id}/unpublish", response_model=PublishResponse)
 async def unpublish_game(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -139,7 +137,7 @@ async def unpublish_game(
 
 @router.post("/{game_id}/like")
 async def toggle_like(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -169,7 +167,7 @@ async def toggle_like(
 
 @router.get("/{game_id}/likes")
 async def get_likes(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

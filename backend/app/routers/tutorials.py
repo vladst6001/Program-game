@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +51,7 @@ async def get_user_progress(
 
 
 @router.get("/{tutorial_id}")
-async def get_tutorial(tutorial_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_tutorial(tutorial_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Tutorial).where(Tutorial.id == tutorial_id))
     tutorial = result.scalar_one_or_none()
     if not tutorial:
@@ -69,7 +67,7 @@ async def get_tutorial(tutorial_id: uuid.UUID, db: AsyncSession = Depends(get_db
 
 @router.post("/{tutorial_id}/complete")
 async def mark_step_complete(
-    tutorial_id: uuid.UUID,
+    tutorial_id: str,
     step_index: int = 0,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

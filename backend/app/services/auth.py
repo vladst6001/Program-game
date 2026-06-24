@@ -90,18 +90,11 @@ class AuthService:
         except jwt.InvalidTokenError:
             raise ValueError("Invalid token")
 
-        import uuid
-
         user_id = payload.get("sub")
         if not user_id:
             raise ValueError("Invalid token payload")
 
-        try:
-            uid = uuid.UUID(user_id)
-        except ValueError:
-            raise ValueError("Invalid user ID in token")
-
-        result = await self.db.execute(select(User).where(User.id == uid))
+        result = await self.db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
         if not user:
             raise ValueError("User not found")

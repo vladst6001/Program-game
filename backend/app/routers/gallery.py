@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,7 +48,7 @@ async def list_published_games(
 
 @router.post("/{game_id}/copy", response_model=GameResponse, status_code=status.HTTP_201_CREATED)
 async def copy_game(
-    game_id: uuid.UUID,
+    game_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

@@ -1,17 +1,16 @@
-import uuid
 from datetime import datetime
 
 from pydantic import BaseModel
 
 
 class FriendAddRequest(BaseModel):
-    user_id: uuid.UUID | None = None
+    user_id: str | None = None
     name: str | None = None
 
 
 class FriendResponse(BaseModel):
-    user_id: uuid.UUID
-    friend_id: uuid.UUID
+    user_id: str
+    friend_id: str
     friend_name: str
     status: str
     created_at: datetime

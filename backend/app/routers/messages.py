@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +31,7 @@ async def send_message(
 
 @router.get("/{friend_id}", response_model=list[MessageResponse])
 async def get_message_history(
-    friend_id: uuid.UUID,
+    friend_id: str,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
