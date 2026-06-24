@@ -8,6 +8,7 @@ class RegisterRequest(BaseModel):
     phone: str | None = None
     email: EmailStr | None = None
     password: str
+    telegram_id: int | None = None
 
 
 class LoginRequest(BaseModel):

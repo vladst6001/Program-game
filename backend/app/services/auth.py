@@ -27,7 +27,13 @@ class AuthService:
         phone: str | None = None,
         email: str | None = None,
         password: str = "",
+        telegram_id: int | None = None,
     ) -> User:
+        if telegram_id:
+            existing = await self.db.execute(select(User).where(User.telegram_id == telegram_id))
+            if existing.scalar_one_or_none():
+                return existing.scalar_one_or_none()
+
         if phone:
             existing = await self.db.execute(select(User).where(User.phone == phone))
             if existing.scalar_one_or_none():
@@ -39,7 +45,7 @@ class AuthService:
                 raise ValueError("Email already registered")
 
         password_hash = pwd_context.hash(password) if password else None
-        user = User(name=name, phone=phone, email=email, password_hash=password_hash)
+        user = User(name=name, phone=phone, email=email, password_hash=password_hash, telegram_id=telegram_id)
         self.db.add(user)
         await self.db.flush()
         await self.db.refresh(user)

@@ -1,4 +1,6 @@
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -16,6 +18,30 @@ from app.services.auth import AuthService
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
+class AutoRegisterRequest(BaseModel):
+    name: str
+    telegram_id: int
+
+
+@router.post("/auto-register", response_model=TokenResponse)
+async def auto_register(request: AutoRegisterRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.telegram_id == request.telegram_id))
+    user = result.scalar_one_or_none()
+    if user:
+        service = AuthService(db)
+        token = service.create_token(user.id)
+        return TokenResponse(access_token=token)
+
+    user = User(name=request.name, telegram_id=request.telegram_id)
+    db.add(user)
+    await db.flush()
+    await db.refresh(user)
+
+    service = AuthService(db)
+    token = service.create_token(user.id)
+    return TokenResponse(access_token=token)
+
+
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
@@ -25,6 +51,7 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
             phone=request.phone,
             email=request.email,
             password=request.password,
+            telegram_id=request.telegram_id,
         )
         token = service.create_token(user.id)
         return TokenResponse(access_token=token)
