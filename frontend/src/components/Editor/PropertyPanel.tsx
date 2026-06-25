@@ -186,6 +186,18 @@ export default function PropertyPanel() {
           </div>
 
           <div className="space-y-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selected.isPlayer}
+                onChange={(e) => updateObject(selected.id, { isPlayer: e.target.checked })}
+                className="w-4 h-4 rounded border-dark-500 bg-dark-700 text-neon-green focus:ring-neon-green/40"
+              />
+              <span className="text-[10px] font-semibold text-neon-green uppercase tracking-wider">🎮 Игрок (WASD + мышь)</span>
+            </label>
+          </div>
+
+          <div className="space-y-1">
             <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">HP (здоровье)</span>
             <input
               type="number"

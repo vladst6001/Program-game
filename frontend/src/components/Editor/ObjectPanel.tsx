@@ -8,8 +8,6 @@ export default function ObjectPanel() {
   const removeObject = useEditorStore((s) => s.removeObject);
   const toggleVisibility = useEditorStore((s) => s.toggleVisibility);
   const duplicateObject = useEditorStore((s) => s.duplicateObject);
-  const moveObjectUp = useEditorStore((s) => s.moveObjectUp);
-  const moveObjectDown = useEditorStore((s) => s.moveObjectDown);
   const addObject = useEditorStore((s) => s.addObject);
 
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
@@ -43,6 +41,7 @@ export default function ObjectPanel() {
       hp: 100,
       speed: 5,
       tag: '',
+      isPlayer: false,
     });
     e.target.value = '';
   };
@@ -108,20 +107,6 @@ export default function ObjectPanel() {
                 title="Duplicate"
               >
                 ⧉
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); moveObjectUp(obj.id); }}
-                className="text-[10px] p-0.5 hover:text-neon-green transition-colors"
-                title="Move up"
-              >
-                ▲
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); moveObjectDown(obj.id); }}
-                className="text-[10px] p-0.5 hover:text-neon-green transition-colors"
-                title="Move down"
-              >
-                ▼
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); removeObject(obj.id); }}

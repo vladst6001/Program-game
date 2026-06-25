@@ -1,13 +1,18 @@
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, GizmoHelper, GizmoViewport, TransformControls } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
+import { OrbitControls, Grid } from '@react-three/drei';
 import * as THREE from 'three';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useEditorStore, EditorObject } from '../../store/editorStore';
+import { TransformControls as DreiTransformControls } from '@react-three/drei';
 
-function SceneObject({ obj }: { obj: EditorObject }) {
+function SelectableObject({ obj }: { obj: EditorObject }) {
   const selectedId = useEditorStore((s) => s.selectedObjectId);
   const selectObject = useEditorStore((s) => s.selectObject);
+  const updateObject = useEditorStore((s) => s.updateObject);
+  const toolMode = useEditorStore((s) => (s as any).toolMode || 'translate');
   const isSelected = selectedId === obj.id;
+  const meshRef = useRef<THREE.Mesh>(null);
+  const transformRef = useRef<any>(null);
 
   if (!obj.visible) return null;
 
@@ -28,9 +33,9 @@ function SceneObject({ obj }: { obj: EditorObject }) {
     }
   })();
 
-  return (
+  const group = (
     <group position={obj.position} rotation={obj.rotation} scale={obj.scale}>
-      <mesh onClick={handleClick}>
+      <mesh ref={meshRef} onClick={handleClick} castShadow receiveShadow>
         {geo}
         <meshStandardMaterial
           color={obj.color}
@@ -38,25 +43,42 @@ function SceneObject({ obj }: { obj: EditorObject }) {
           emissiveIntensity={isSelected ? 0.3 : 0}
           wireframe={obj.type === 'plane'}
           side={THREE.DoubleSide}
+          metalness={0.3}
+          roughness={0.6}
         />
       </mesh>
       {isSelected && (
-        <mesh scale={[1.02, 1.02, 1.02]}>
+        <mesh scale={[1.03, 1.03, 1.03]}>
           {geo}
           <meshBasicMaterial color="#39ff14" wireframe transparent opacity={0.5} />
         </mesh>
       )}
     </group>
   );
-}
 
-function Gizmo() {
-  const selectedId = useEditorStore((s) => s.selectedObjectId);
-  if (!selectedId) return null;
+  if (!isSelected) return group;
+
+  const mode = toolMode === 'rotate' ? 'rotate' : toolMode === 'scale' ? 'scale' : 'translate';
+
   return (
-    <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-      <GizmoViewport />
-    </GizmoHelper>
+    <DreiTransformControls
+      object={meshRef as any}
+      mode={mode as any}
+      size={0.7}
+      onObjectChange={() => {
+        if (!meshRef.current) return;
+        const pos = meshRef.current.position;
+        const rot = meshRef.current.rotation;
+        const scl = meshRef.current.scale;
+        updateObject(obj.id, {
+          position: [pos.x, pos.y, pos.z],
+          rotation: [rot.x * 180 / Math.PI, rot.y * 180 / Math.PI, rot.z * 180 / Math.PI],
+          scale: [scl.x, scl.y, scl.z],
+        });
+      }}
+    >
+      {group}
+    </DreiTransformControls>
   );
 }
 
@@ -70,9 +92,10 @@ export default function Canvas3D() {
       gl={{ antialias: true }}
       onPointerMissed={() => selectObject(null)}
       className="bg-dark-900"
+      shadows
     >
       <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 10, 5]} intensity={0.8} />
+      <directionalLight position={[10, 15, 5]} intensity={0.8} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
       <pointLight position={[-5, 5, -5]} intensity={0.3} color="#0066ff" />
 
       <Grid
@@ -93,11 +116,10 @@ export default function Canvas3D() {
       </mesh>
 
       {objects.map((obj) => (
-        <SceneObject key={obj.id} obj={obj} />
+        <SelectableObject key={obj.id} obj={obj} />
       ))}
 
       <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
-      <Gizmo />
     </Canvas>
   );
 }

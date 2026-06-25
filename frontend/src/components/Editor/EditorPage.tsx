@@ -46,6 +46,7 @@ export default function EditorPage() {
               hp: o.hp ?? 100,
               speed: o.speed ?? 5,
               tag: o.tag ?? '',
+              isPlayer: o.isPlayer ?? false,
             })));
           }
           setGameCode(code);

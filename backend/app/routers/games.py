@@ -47,15 +47,12 @@ async def list_my_games(
 @router.get("/{game_id}", response_model=GameResponse)
 async def get_game(
     game_id: str,
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Game).where(Game.id == game_id))
     game = result.scalar_one_or_none()
     if not game:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
-    if game.author_id != user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
     return game
 
 

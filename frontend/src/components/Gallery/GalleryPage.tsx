@@ -98,7 +98,7 @@ export default function GalleryPage() {
   return (
     <div className="h-screen flex flex-col bg-dark-900">
       <div className="h-14 bg-dark-800 border-b border-dark-500 flex items-center px-6 shrink-0">
-        <h1 className="text-lg font-bold text-neon-green">Game Platform</h1>
+        <h1 className="text-lg font-bold text-neon-green">🎮 Играть</h1>
         <div className="flex-1" />
         <div className="flex gap-4">
           <button onClick={() => navigate('/tutorials')} className="text-sm text-gray-400 hover:text-neon-blue transition-colors">
@@ -129,10 +129,8 @@ export default function GalleryPage() {
       </div>
 
       <div className="flex gap-3 px-6 pb-2">
-        <button onClick={() => setTab('popular')} className={tabClass('popular')}>Popular</button>
-        <button onClick={() => setTab('recent')} className={tabClass('recent')}>Recent</button>
-        <div className="flex-1" />
-        <button onClick={() => navigate('/editor/new')} className="btn-neon text-xs py-1">+ New Game</button>
+        <button onClick={() => setTab('popular')} className={tabClass('popular')}>Популярные</button>
+        <button onClick={() => setTab('recent')} className={tabClass('recent')}>Новые</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
@@ -158,7 +156,7 @@ export default function GalleryPage() {
               {filteredGames.map((game, i) => (
                 <div
                   key={game.id}
-                  onClick={() => navigate(`/editor/${game.id}`)}
+                  onClick={() => handlePlay(game, { stopPropagation: () => {} } as any)}
                   className="panel p-4 cursor-pointer group hover:border-neon-green/40 transition-all hover:shadow-neon-sm-green"
                 >
                   <div
@@ -174,6 +172,13 @@ export default function GalleryPage() {
                         <svg className="w-4 h-4 text-dark-900 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M8 5v14l11-7z" />
                         </svg>
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/editor/${game.id}`); }}
+                        className="w-8 h-8 rounded-full bg-dark-700/90 flex items-center justify-center hover:bg-dark-600 border border-dark-500"
+                        title="Редактировать"
+                      >
+                        <span className="text-[10px] text-white">✏️</span>
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/editor/${game.id}`); }}

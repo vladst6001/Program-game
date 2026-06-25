@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useEditorStore, EditorObject } from '../../store/editorStore';
+import { useEditorStore, ToolMode } from '../../store/editorStore';
 import { gamesApi } from '../../api/games';
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
@@ -14,31 +14,28 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
   const navigate = useNavigate();
   const mode = useEditorStore((s) => s.mode);
   const setMode = useEditorStore((s) => s.setMode);
+  const toolMode = useEditorStore((s) => s.toolMode);
+  const setToolMode = useEditorStore((s) => s.setToolMode);
   const addObject = useEditorStore((s) => s.addObject);
   const exportCode = useEditorStore((s) => s.exportCode);
   const gameName = useEditorStore((s) => s.gameName);
   const setGameName = useEditorStore((s) => s.setGameName);
   const [saving, setSaving] = useState(false);
 
-  const handleAddObject = (type: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'floor' | 'wall' | 'stair', color?: string) => {
-    const presets: Record<string, Partial<EditorObject>> = {
-      floor: { name: 'Пол', scale: [4, 0.1, 4], position: [0, 0, 0], color: color || '#8B4513', isStatic: true },
-      wall: { name: 'Стена', scale: [4, 3, 0.2], position: [0, 1.5, 0], color: color || '#A0522D', isStatic: true },
-      stair: { name: 'Лестница', scale: [1, 2, 2], position: [0, 1, 0], color: color || '#654321', isStatic: true },
-    };
-    const preset = presets[type] || {};
+  const handleAddObject = (type: string, preset?: any) => {
     addObject({
-      name: preset.name || `New ${type}`,
-      type,
-      position: preset.position || [0, 0, 0],
+      name: preset?.name || `New ${type}`,
+      type: type as any,
+      position: preset?.position || [0, 0, 0],
       rotation: [0, 0, 0],
-      scale: preset.scale || [1, 1, 1],
-      color: preset.color || color || '#39ff14',
+      scale: preset?.scale || [1, 1, 1],
+      color: preset?.color || '#39ff14',
       visible: true,
-      isStatic: preset.isStatic ?? true,
+      isStatic: true,
       hp: 100,
       speed: 5,
       tag: '',
+      isPlayer: false,
     });
   };
 
@@ -59,27 +56,17 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
     setSaving(false);
   };
 
-  const handlePublish = async () => {
-    if (!id || id === 'new') return;
-    try {
-      await gamesApi.publish(id);
-    } catch (e) {
-      console.error('Publish failed:', e);
-    }
-  };
-
   const handleRun = async () => {
     setSaving(true);
     try {
       const code = exportCode();
       if (id && id !== 'new') {
         await gamesApi.update(id, { code });
-        window.open(`/play/${id}`, '_blank');
+        window.open(`${window.location.origin}${window.location.pathname}#/play/${id}`, '_blank');
       } else {
         const { data } = await gamesApi.create(gameName || 'Untitled Game');
         await gamesApi.update(data.id, { code });
-        navigate(`/editor/${data.id}`, { replace: true });
-        window.open(`/play/${data.id}`, '_blank');
+        window.open(`${window.location.origin}${window.location.pathname}#/play/${data.id}`, '_blank');
       }
     } catch (e) {
       console.error('Run failed:', e);
@@ -87,10 +74,22 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
     setSaving(false);
   };
 
+  const toolBtn = (t: ToolMode, icon: string, label: string) => (
+    <button
+      onClick={() => setToolMode(t)}
+      className={`px-2 py-1 text-xs rounded transition-all ${
+        toolMode === t ? 'bg-neon-green/20 text-neon-green border border-neon-green/40' : 'text-gray-400 hover:text-white border border-transparent'
+      }`}
+      title={label}
+    >
+      {icon}
+    </button>
+  );
+
   return (
-    <div className="h-12 bg-dark-800 border-b border-dark-500 flex items-center px-4 gap-3 shrink-0">
+    <div className="h-12 bg-dark-800 border-b border-dark-500 flex items-center px-4 gap-2 shrink-0">
       <button onClick={() => navigate('/')} className="text-sm text-dark-500 hover:text-neon-green transition-colors">
-        ← Gallery
+        ← Назад
       </button>
 
       <div className="w-px h-6 bg-dark-600" />
@@ -98,110 +97,84 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
       <input
         value={gameName}
         onChange={(e) => setGameName(e.target.value)}
-        className="bg-dark-700 text-white text-sm px-2 py-1 rounded border border-dark-500 outline-none focus:border-neon-green/40 w-40"
-        placeholder="Game name..."
+        className="bg-dark-700 text-white text-sm px-2 py-1 rounded border border-dark-500 outline-none focus:border-neon-green/40 w-36"
+        placeholder="Название..."
       />
 
       <div className="w-px h-6 bg-dark-600" />
 
+      {/* 2D/3D toggle */}
       <div className="flex bg-dark-700 rounded-lg p-0.5">
-        <button
-          onClick={() => setMode('3d')}
-          className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-            mode === '3d' ? 'bg-neon-green/20 text-neon-green' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          3D
-        </button>
-        <button
-          onClick={() => setMode('2d')}
-          className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-            mode === '2d' ? 'bg-neon-blue/20 text-neon-blue' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          2D
-        </button>
+        <button onClick={() => setMode('3d')} className={`px-2 py-1 text-xs rounded-md transition-all ${mode === '3d' ? 'bg-neon-green/20 text-neon-green' : 'text-gray-400'}`}>3D</button>
+        <button onClick={() => setMode('2d')} className={`px-2 py-1 text-xs rounded-md transition-all ${mode === '2d' ? 'bg-neon-blue/20 text-neon-blue' : 'text-gray-400'}`}>2D</button>
       </div>
 
       <div className="w-px h-6 bg-dark-600" />
 
+      {/* Tool modes: Move/Rotate/Scale */}
+      <div className="flex bg-dark-700 rounded-lg p-0.5 gap-0.5">
+        {toolBtn('translate', '✥', 'Перемещение')}
+        {toolBtn('rotate', '↻', 'Вращение')}
+        {toolBtn('scale', '⊞', 'Масштаб')}
+      </div>
+
+      <div className="w-px h-6 bg-dark-600" />
+
+      {/* Add Object */}
       <div className="relative group">
         <button className="btn-neon text-xs py-1">+ Объект</button>
         <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[120px]">
-          {(['cube', 'sphere', 'cylinder', 'plane'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => handleAddObject(type)}
-              className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green capitalize transition-colors"
-            >
-              {type === 'cube' ? 'Куб' : type === 'sphere' ? 'Сфера' : type === 'cylinder' ? 'Цилиндр' : 'Плоскость'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="relative group">
-        <button className="btn-neon text-xs py-1">+ Здание</button>
-        <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[120px]">
-          {(['floor', 'wall', 'stair'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => handleAddObject(type)}
-              className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green capitalize transition-colors"
-            >
-              {type === 'floor' ? 'Пол' : type === 'wall' ? 'Стена' : 'Лестница'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="relative group">
-        <button className="btn-neon text-xs py-1">Текстура</button>
-        <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[100px]">
           {[
-            { name: 'Кирпич', color: '#A0522D' },
-            { name: 'Бетон', color: '#808080' },
-            { name: 'Дерево', color: '#8B4513' },
-            { name: 'Металл', color: '#708090' },
-            { name: 'Трава', color: '#228B22' },
-            { name: 'Вода', color: '#1E90FF' },
-          ].map((tex) => (
-            <button
-              key={tex.name}
-              onClick={() => handleAddObject('floor', tex.color)}
-              className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green transition-colors flex items-center gap-2"
-            >
-              <span className="w-3 h-3 rounded-sm border border-dark-500" style={{ backgroundColor: tex.color }} />
-              {tex.name}
+            { type: 'cube', label: 'Куб' },
+            { type: 'sphere', label: 'Сфера' },
+            { type: 'cylinder', label: 'Цилиндр' },
+            { type: 'plane', label: 'Плоскость' },
+          ].map(({ type, label }) => (
+            <button key={type} onClick={() => handleAddObject(type)} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green transition-colors">
+              {label}
             </button>
           ))}
         </div>
       </div>
 
-      <button
-        onClick={onToggleCode}
-        className={`text-xs px-3 py-1 rounded transition-all ${
-          showCode ? 'bg-neon-green/20 text-neon-green' : 'text-gray-400 hover:text-white'
-        }`}
-      >
+      {/* Building tools */}
+      <div className="relative group">
+        <button className="btn-neon text-xs py-1">🏗 Здание</button>
+        <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[120px]">
+          <button onClick={() => handleAddObject('floor', { name: 'Пол', scale: [10, 0.1, 10], color: '#555555' })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green">🟫 Пол</button>
+          <button onClick={() => handleAddObject('wall', { name: 'Стена', scale: [4, 3, 0.2], color: '#8B4513' })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green">🧱 Стена</button>
+          <button onClick={() => handleAddObject('stair', { name: 'Лестница', scale: [1, 2, 2], color: '#DEB887' })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green">🪜 Лестница</button>
+        </div>
+      </div>
+
+      {/* Textures */}
+      <div className="relative group">
+        <button className="btn-neon text-xs py-1">🎨 Текстура</button>
+        <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[140px]">
+          {[
+            { name: 'Кирпич', color: '#8B4513' },
+            { name: 'Бетон', color: '#808080' },
+            { name: 'Дерево', color: '#DEB887' },
+            { name: 'Металл', color: '#C0C0C0' },
+            { name: 'Трава', color: '#228B22' },
+            { name: 'Вода', color: '#4169E1' },
+          ].map(({ name, color }) => (
+            <button key={name} onClick={() => handleAddObject('cube', { name, color, isStatic: true })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green flex items-center gap-2">
+              <span className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={onToggleCode} className={`text-xs px-2 py-1 rounded transition-all ${showCode ? 'bg-neon-green/20 text-neon-green' : 'text-gray-400 hover:text-white'}`}>
         {'</>'} Код
       </button>
 
       <div className="flex-1" />
 
-      <button onClick={handleSave} disabled={saving} className="btn-neon text-xs py-1">
-        {saving ? '...' : '💾 Save'}
-      </button>
-      <button onClick={handleRun} disabled={saving} className="text-xs px-3 py-1 rounded bg-neon-green/20 text-neon-green hover:bg-neon-green/30 transition-all font-medium">
-        ▶ Запуск
-      </button>
-      <button onClick={handlePublish} className="btn-neon-blue text-xs py-1" disabled={!id || id === 'new'}>
-        Publish
-      </button>
-
-      <button onClick={() => navigate('/profile')} className="text-xs text-gray-400 hover:text-neon-blue transition-colors">
-        Profile
-      </button>
+      <button onClick={handleSave} disabled={saving} className="btn-neon text-xs py-1">{saving ? '...' : '💾 Save'}</button>
+      <button onClick={handleRun} disabled={saving} className="bg-neon-green text-dark-900 text-xs py-1 px-3 rounded font-bold hover:bg-neon-green/80 transition-colors">▶ Запуск</button>
     </div>
   );
 }
