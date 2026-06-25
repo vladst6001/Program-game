@@ -556,5 +556,5 @@ export default function BlocklyWorkspace({ onCodeGenerated }: Props) {
     return () => { ws.dispose(); };
   }, [generateAllCode, onCodeGenerated]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return <div ref={containerRef} className="w-full h-full min-h-[300px]" />;
 }

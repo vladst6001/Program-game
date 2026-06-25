@@ -135,6 +135,8 @@ export default function GalleryPage() {
       <div className="flex gap-3 px-6 pb-2">
         <button onClick={() => setTab('popular')} className={tabClass('popular')}>Популярные</button>
         <button onClick={() => setTab('recent')} className={tabClass('recent')}>Новые</button>
+        <div className="flex-1" />
+        <button onClick={() => navigate('/editor/new')} className="btn-neon text-xs py-1">✏️ Создать игру</button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">

@@ -1,12 +1,12 @@
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid } from '@react-three/drei';
 import * as THREE from 'three';
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef } from 'react';
 import { useEditorStore, EditorObject } from '../../store/editorStore';
-import { TransformControls as DreiTransformControls } from '@react-three/drei';
 
-function SceneObject({ obj, onSelect }: { obj: EditorObject; onSelect: (id: string) => void }) {
+function SceneObject({ obj }: { obj: EditorObject }) {
   const selectedId = useEditorStore((s) => s.selectedObjectId);
+  const selectObject = useEditorStore((s) => s.selectObject);
   const isSelected = selectedId === obj.id;
 
   if (!obj.visible) return null;
@@ -23,10 +23,12 @@ function SceneObject({ obj, onSelect }: { obj: EditorObject; onSelect: (id: stri
     }
   })();
 
+  const rotRad = obj.rotation.map((r) => r * Math.PI / 180) as [number, number, number];
+
   return (
-    <group position={obj.position} rotation={obj.rotation} scale={obj.scale}>
+    <group position={obj.position} rotation={rotRad} scale={obj.scale}>
       <mesh
-        onClick={(e) => { e.stopPropagation(); onSelect(obj.id); }}
+        onClick={(e) => { e.stopPropagation(); selectObject(obj.id); }}
         castShadow
         receiveShadow
       >
@@ -42,93 +44,33 @@ function SceneObject({ obj, onSelect }: { obj: EditorObject; onSelect: (id: stri
         />
       </mesh>
       {isSelected && (
-        <mesh scale={[1.03, 1.03, 1.03]}>
-          {geo}
-          <meshBasicMaterial color="#39ff14" wireframe transparent opacity={0.5} />
-        </mesh>
-      )}
-      {/* X/Y/Z Labels when selected */}
-      {isSelected && (
-        <group>
-          {/* X axis label */}
-          <group position={[1.5, 0, 0]}>
-            <mesh><boxGeometry args={[0.3, 0.15, 0.02]} /><meshBasicMaterial color="#ff4444" /></mesh>
-          </group>
-          {/* Y axis label */}
-          <group position={[0, 1.5, 0]}>
-            <mesh><boxGeometry args={[0.15, 0.3, 0.02]} /><meshBasicMaterial color="#44ff44" /></mesh>
-          </group>
-          {/* Z axis label */}
-          <group position={[0, 0, 1.5]}>
-            <mesh><boxGeometry args={[0.15, 0.02, 0.3]} /><meshBasicMaterial color="#4444ff" /></mesh>
-          </group>
-        </group>
+        <>
+          <mesh scale={[1.03, 1.03, 1.03]}>
+            {geo}
+            <meshBasicMaterial color="#39ff14" wireframe transparent opacity={0.5} />
+          </mesh>
+          {/* Axis indicators */}
+          <mesh position={[1, 0, 0]}>
+            <cylinderGeometry args={[0.02, 0.02, 2, 8]} />
+            <meshBasicMaterial color="#ff4444" />
+          </mesh>
+          <mesh position={[0, 1, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.02, 0.02, 2, 8]} />
+            <meshBasicMaterial color="#44ff44" />
+          </mesh>
+          <mesh position={[0, 0, 1]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.02, 0.02, 2, 8]} />
+            <meshBasicMaterial color="#4444ff" />
+          </mesh>
+        </>
       )}
     </group>
   );
 }
 
-function TransformGizmo({ orbitRef }: { orbitRef: React.RefObject<any> }) {
-  const selectedId = useEditorStore((s) => s.selectedObjectId);
-  const objects = useEditorStore((s) => s.objects);
-  const updateObject = useEditorStore((s) => s.updateObject);
-  const toolMode = useEditorStore((s) => s.toolMode);
-  const transformRef = useRef<any>(null);
-
-  const selected = objects.find((o) => o.id === selectedId);
-  if (!selected) return null;
-
-  const mode = toolMode === 'rotate' ? 'rotate' : toolMode === 'scale' ? 'scale' : 'translate';
-
-  const handleChange = useCallback(() => {
-    if (!transformRef.current) return;
-    const obj = transformRef.current.object;
-    if (!obj) return;
-
-    updateObject(selected.id, {
-      position: [
-        Math.round(obj.position.x * 100) / 100,
-        Math.round(obj.position.y * 100) / 100,
-        Math.round(obj.position.z * 100) / 100,
-      ],
-      rotation: [
-        Math.round(obj.rotation.x * 180 / Math.PI * 10) / 10,
-        Math.round(obj.rotation.y * 180 / Math.PI * 10) / 10,
-        Math.round(obj.rotation.z * 180 / Math.PI * 10) / 10,
-      ],
-      scale: [
-        Math.round(obj.scale.x * 100) / 100,
-        Math.round(obj.scale.y * 100) / 100,
-        Math.round(obj.scale.z * 100) / 100,
-      ],
-    });
-  }, [selected.id, updateObject]);
-
-  return (
-    <DreiTransformControls
-      ref={transformRef}
-      object={new THREE.Object3D().translateX(selected.position[0]).translateY(selected.position[1]).translateZ(selected.position[2])}
-      mode={mode as any}
-      size={1.5}
-      onPointerDown={() => {
-        if (orbitRef.current) orbitRef.current.enabled = false;
-      }}
-      onPointerUp={() => {
-        if (orbitRef.current) orbitRef.current.enabled = true;
-      }}
-      onObjectChange={handleChange}
-    />
-  );
-}
-
-function OrbitControlsWrapper({ orbitRef }: { orbitRef: React.RefObject<any> }) {
-  return <OrbitControls ref={orbitRef} makeDefault enableDamping dampingFactor={0.1} />;
-}
-
 export default function Canvas3D() {
   const objects = useEditorStore((s) => s.objects);
   const selectObject = useEditorStore((s) => s.selectObject);
-  const orbitRef = useRef<any>(null);
 
   return (
     <Canvas
@@ -160,11 +102,10 @@ export default function Canvas3D() {
       </mesh>
 
       {objects.map((obj) => (
-        <SceneObject key={obj.id} obj={obj} onSelect={(id) => selectObject(id)} />
+        <SceneObject key={obj.id} obj={obj} />
       ))}
 
-      <TransformGizmo orbitRef={orbitRef} />
-      <OrbitControlsWrapper orbitRef={orbitRef} />
+      <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
     </Canvas>
   );
 }
