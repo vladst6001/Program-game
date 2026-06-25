@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+import json
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
@@ -75,7 +76,7 @@ async def update_game(
     if request.name is not None:
         game.name = request.name
     if request.code is not None:
-        game.code = request.code
+        game.code = json.dumps(request.code)
 
     await db.flush()
     await db.refresh(game)
