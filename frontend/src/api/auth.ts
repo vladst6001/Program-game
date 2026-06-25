@@ -1,43 +1,15 @@
 import client from './client';
 
-export interface TokenResponse {
-  access_token: string;
-  token_type: string;
-}
-
-export interface RegisterRequest {
-  name: string;
-  phone?: string;
-  email?: string;
-  password: string;
-}
-
-export interface LoginRequest {
-  phone: string;
-  password: string;
-}
-
-export interface SendCodeRequest {
-  phone: string;
-}
-
-export interface VerifyCodeRequest {
-  phone: string;
-  code: string;
-}
-
 export const authApi = {
-  register: (data: RegisterRequest) =>
-    client.post<TokenResponse>('/api/auth/register', data),
+  register: (data: { name: string; phone?: string; password: string }) =>
+    client.post<{ access_token: string }>('/api/auth/register', data),
 
-  login: (data: LoginRequest) =>
-    client.post<TokenResponse>('/api/auth/login', data),
+  login: (data: { phone: string; password: string }) =>
+    client.post<{ access_token: string }>('/api/auth/login', data),
 
-  sendCode: (data: SendCodeRequest) =>
-    client.post('/api/auth/send-code', data),
+  me: () =>
+    client.get('/api/auth/me'),
 
-  verifyCode: (data: VerifyCodeRequest) =>
-    client.post<TokenResponse>('/api/auth/verify-code', data),
-
-  me: () => client.get('/api/auth/me'),
+  autoRegister: (name: string, telegram_id: number) =>
+    client.post<{ access_token: string }>('/api/auth/auto-register', { name, telegram_id }),
 };
