@@ -31,6 +31,16 @@ const GAME_BLOCKS: Record<string, any> = {
       this.setStyle('action_blocks');
     },
   },
+  action_move_to: {
+    init: function (this: Blockly.Block) {
+      this.appendValueInput('FROM').appendField('Двигать');
+      this.appendValueInput('TO').appendField('к объекту');
+      this.appendValueInput('SPEED').appendField('скорость');
+      this.setPreviousStatement(true);
+      this.setNextStatement(true);
+      this.setStyle('action_blocks');
+    },
+  },
   action_rotate: {
     init: function (this: Blockly.Block) {
       this.appendValueInput('OBJECT').appendField('Поворачивать');
@@ -104,6 +114,12 @@ const GENERATORS: Record<string, (block: Blockly.Block) => string | (string | nu
     const z = javascriptGenerator.valueToCode(block, 'Z', 0) || '0';
     return `game.move(${obj}, ${x}, ${y}, ${z});\n`;
   },
+  action_move_to: (block) => {
+    const from = javascriptGenerator.valueToCode(block, 'FROM', 0) || '"player"';
+    const to = javascriptGenerator.valueToCode(block, 'TO', 0) || '"target"';
+    const speed = javascriptGenerator.valueToCode(block, 'SPEED', 0) || '5';
+    return `game.moveTowards(${from}, ${to}, ${speed});\n`;
+  },
   action_rotate: (block) => {
     const obj = javascriptGenerator.valueToCode(block, 'OBJECT', 0) || '"player"';
     const angle = javascriptGenerator.valueToCode(block, 'ANGLE', 0) || '90';
@@ -149,6 +165,7 @@ const TOOLBOX: Blockly.utils.toolbox.ToolboxDefinition = {
       kind: 'category', name: 'Действия', categorystyle: 'action_category',
       contents: [
         { kind: 'block', type: 'action_move' },
+        { kind: 'block', type: 'action_move_to' },
         { kind: 'block', type: 'action_rotate' },
         { kind: 'block', type: 'action_play_sound' },
         { kind: 'block', type: 'action_show_text' },
