@@ -162,6 +162,53 @@ export default function PropertyPanel() {
               <option value="plane">Плоскость</option>
             </select>
           </div>
+
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Тег объекта</span>
+            <input
+              value={selected.tag}
+              onChange={(e) => updateObject(selected.id, { tag: e.target.value })}
+              className="input-dark w-full text-sm"
+              placeholder="имя_для_кода"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selected.isStatic}
+                onChange={(e) => updateObject(selected.id, { isStatic: e.target.checked })}
+                className="w-4 h-4 rounded border-dark-500 bg-dark-700 text-neon-green focus:ring-neon-green/40"
+              />
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Статический (не падает)</span>
+            </label>
+          </div>
+
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">HP (здоровье)</span>
+            <input
+              type="number"
+              value={selected.hp}
+              min={0}
+              max={9999}
+              onChange={(e) => updateObject(selected.id, { hp: parseInt(e.target.value) || 0 })}
+              className="input-dark w-full text-sm"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Скорость</span>
+            <input
+              type="number"
+              value={selected.speed}
+              min={0}
+              max={100}
+              step={0.5}
+              onChange={(e) => updateObject(selected.id, { speed: parseFloat(e.target.value) || 0 })}
+              className="input-dark w-full text-sm"
+            />
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center">

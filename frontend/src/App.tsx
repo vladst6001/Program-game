@@ -5,6 +5,7 @@ import Profile from './components/Profile/ProfilePage';
 import Tutorials from './components/Tutorial/TutorialsPage';
 import Chat from './components/Chat/ChatPage';
 import PlayPage from './components/Play/PlayPage';
+import SettingsPage from './components/Settings/SettingsPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/tutorials" element={<Tutorials />} />
         <Route path="/chat/:sessionId" element={<Chat />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </div>
   );

@@ -20,6 +20,15 @@ interface AuthState {
   fetchUser: () => Promise<void>;
 }
 
+function getOrCreateDeviceId(): string {
+  let id = localStorage.getItem('device_id');
+  if (!id) {
+    id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    localStorage.setItem('device_id', id);
+  }
+  return id;
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: localStorage.getItem('token'),
@@ -29,9 +38,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   autoRegister: async () => {
     if (get().token) return;
     try {
-      const name = 'Player_' + Math.random().toString(36).slice(2, 8);
-      const tgId = Math.floor(Math.random() * 99999999) + 10000000;
-      const { data } = await authApi.autoRegister(name, tgId);
+      const deviceId = getOrCreateDeviceId();
+      const name = 'Player_' + deviceId.slice(4, 10);
+      const { data } = await authApi.autoRegister(name, parseInt(deviceId.slice(4, 14)) || 12345678);
       localStorage.setItem('token', data.access_token);
       set({ token: data.access_token, isAuthenticated: true });
       await get().fetchUser();

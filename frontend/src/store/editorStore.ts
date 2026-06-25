@@ -13,6 +13,10 @@ export interface EditorObject {
   color: string;
   visible: boolean;
   modelUrl?: string;
+  isStatic: boolean;
+  hp: number;
+  speed: number;
+  tag: string;
 }
 
 interface EditorState {
@@ -50,7 +54,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   addObject: (obj) => {
     const id = genId();
-    set((s) => ({ objects: [...s.objects, { ...obj, id }], selectedObjectId: id }));
+    set((s) => ({
+      objects: [...s.objects, {
+        ...obj,
+        id,
+        isStatic: obj.isStatic ?? true,
+        hp: obj.hp ?? 100,
+        speed: obj.speed ?? 5,
+        tag: obj.tag ?? '',
+      }],
+      selectedObjectId: id,
+    }));
   },
 
   removeObject: (id) =>
@@ -121,6 +135,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         scale: o.scale,
         color: o.color,
         modelUrl: o.modelUrl,
+        isStatic: o.isStatic,
+        hp: o.hp,
+        speed: o.speed,
+        tag: o.tag,
       })),
     };
   },

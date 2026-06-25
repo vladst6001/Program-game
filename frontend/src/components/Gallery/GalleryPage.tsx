@@ -102,17 +102,14 @@ export default function GalleryPage() {
         <div className="flex-1" />
         <div className="flex gap-4">
           <button onClick={() => navigate('/tutorials')} className="text-sm text-gray-400 hover:text-neon-blue transition-colors">
-            Tutorials
+            Уроки
           </button>
-          {isAuthenticated ? (
-            <button onClick={() => navigate('/profile')} className="text-sm text-gray-400 hover:text-neon-green transition-colors">
-              Profile
-            </button>
-          ) : (
-            <button onClick={() => navigate('/profile')} className="btn-neon text-xs py-1">
-              Sign In
-            </button>
-          )}
+          <button onClick={() => navigate('/settings')} className="text-sm text-gray-400 hover:text-neon-purple transition-colors">
+            ⚙️
+          </button>
+          <button onClick={() => navigate('/profile')} className="text-sm text-gray-400 hover:text-neon-green transition-colors">
+            👤
+          </button>
         </div>
       </div>
 

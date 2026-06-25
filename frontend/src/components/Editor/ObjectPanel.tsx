@@ -39,6 +39,10 @@ export default function ObjectPanel() {
       color: '#39ff14',
       visible: true,
       modelUrl: url,
+      isStatic: true,
+      hp: 100,
+      speed: 5,
+      tag: '',
     });
     e.target.value = '';
   };

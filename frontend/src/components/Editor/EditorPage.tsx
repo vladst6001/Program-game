@@ -42,6 +42,10 @@ export default function EditorPage() {
               color: o.color || '#39ff14',
               visible: true,
               modelUrl: o.modelUrl,
+              isStatic: o.isStatic ?? true,
+              hp: o.hp ?? 100,
+              speed: o.speed ?? 5,
+              tag: o.tag ?? '',
             })));
           }
           setGameCode(code);

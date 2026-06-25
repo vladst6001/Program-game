@@ -22,9 +22,9 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
 
   const handleAddObject = (type: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'floor' | 'wall' | 'stair', color?: string) => {
     const presets: Record<string, Partial<EditorObject>> = {
-      floor: { name: 'Пол', scale: [4, 0.1, 4], position: [0, 0, 0], color: color || '#8B4513' },
-      wall: { name: 'Стена', scale: [4, 3, 0.2], position: [0, 1.5, 0], color: color || '#A0522D' },
-      stair: { name: 'Лестница', scale: [1, 2, 2], position: [0, 1, 0], color: color || '#654321' },
+      floor: { name: 'Пол', scale: [4, 0.1, 4], position: [0, 0, 0], color: color || '#8B4513', isStatic: true },
+      wall: { name: 'Стена', scale: [4, 3, 0.2], position: [0, 1.5, 0], color: color || '#A0522D', isStatic: true },
+      stair: { name: 'Лестница', scale: [1, 2, 2], position: [0, 1, 0], color: color || '#654321', isStatic: true },
     };
     const preset = presets[type] || {};
     addObject({
@@ -35,6 +35,10 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
       scale: preset.scale || [1, 1, 1],
       color: preset.color || color || '#39ff14',
       visible: true,
+      isStatic: preset.isStatic ?? true,
+      hp: 100,
+      speed: 5,
+      tag: '',
     });
   };
 
@@ -62,6 +66,25 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
     } catch (e) {
       console.error('Publish failed:', e);
     }
+  };
+
+  const handleRun = async () => {
+    setSaving(true);
+    try {
+      const code = exportCode();
+      if (id && id !== 'new') {
+        await gamesApi.update(id, { code });
+        window.open(`/play/${id}`, '_blank');
+      } else {
+        const { data } = await gamesApi.create(gameName || 'Untitled Game');
+        await gamesApi.update(data.id, { code });
+        navigate(`/editor/${data.id}`, { replace: true });
+        window.open(`/play/${data.id}`, '_blank');
+      }
+    } catch (e) {
+      console.error('Run failed:', e);
+    }
+    setSaving(false);
   };
 
   return (
@@ -167,7 +190,10 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
       <div className="flex-1" />
 
       <button onClick={handleSave} disabled={saving} className="btn-neon text-xs py-1">
-        {saving ? '...' : 'Save'}
+        {saving ? '...' : '💾 Save'}
+      </button>
+      <button onClick={handleRun} disabled={saving} className="text-xs px-3 py-1 rounded bg-neon-green/20 text-neon-green hover:bg-neon-green/30 transition-all font-medium">
+        ▶ Запуск
       </button>
       <button onClick={handlePublish} className="btn-neon-blue text-xs py-1" disabled={!id || id === 'new'}>
         Publish
