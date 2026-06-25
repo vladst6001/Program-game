@@ -28,7 +28,7 @@ export const gamesApi = {
   create: (name: string) => client.post<Game>('/api/games', { name }),
 
   update: (id: string, data: { name?: string; code?: Record<string, unknown> }) =>
-    client.patch<Game>(`/api/games/${id}`, data),
+    client.put<Game>(`/api/games/${id}`, data),
 
   delete: (id: string) => client.delete(`/api/games/${id}`),
 
