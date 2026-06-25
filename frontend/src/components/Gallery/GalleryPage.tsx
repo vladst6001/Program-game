@@ -101,9 +101,12 @@ export default function GalleryPage() {
       <div className="h-14 bg-dark-800 border-b border-dark-500 flex items-center px-6 shrink-0">
         <h1 className="text-lg font-bold text-neon-green">🎮 Играть</h1>
         <div className="flex-1" />
-        <div className="flex gap-4">
+        <div className="flex gap-3">
+          <button onClick={() => navigate('/join')} className="text-sm text-gray-400 hover:text-neon-green transition-colors">
+            🔑 Войти по ID
+          </button>
           <button onClick={() => navigate('/tutorials')} className="text-sm text-gray-400 hover:text-neon-blue transition-colors">
-            Уроки
+            📖 Уроки
           </button>
           <button onClick={() => navigate('/settings')} className="text-sm text-gray-400 hover:text-neon-purple transition-colors">
             ⚙️
