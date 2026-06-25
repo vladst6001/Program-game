@@ -49,6 +49,9 @@ export default function PropertyPanel() {
   const selectedObjectId = useEditorStore((s) => s.selectedObjectId);
   const objects = useEditorStore((s) => s.objects);
   const updateObject = useEditorStore((s) => s.updateObject);
+  const removeObject = useEditorStore((s) => s.removeObject);
+  const duplicateObject = useEditorStore((s) => s.duplicateObject);
+  const toggleVisibility = useEditorStore((s) => s.toggleVisibility);
   const gameName = useEditorStore((s) => s.gameName);
   const setGameName = useEditorStore((s) => s.setGameName);
 
@@ -57,50 +60,48 @@ export default function PropertyPanel() {
   return (
     <div className="w-60 bg-dark-800 border-l border-dark-500 flex flex-col shrink-0">
       <div className="p-3 border-b border-dark-500">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Properties</span>
-      </div>
-
-      <div className="p-3 border-b border-dark-500 space-y-2">
-        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Game</span>
-        <input
-          value={gameName}
-          onChange={(e) => setGameName(e.target.value)}
-          className="input-dark w-full text-sm"
-          placeholder="Game name"
-        />
+        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Свойства</span>
       </div>
 
       {selected ? (
         <div className="flex-1 overflow-y-auto p-3 space-y-4">
           <div className="space-y-2">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Object</span>
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Объект</span>
             <input
               value={selected.name}
               onChange={(e) => updateObject(selected.id, { name: e.target.value })}
               className="input-dark w-full text-sm"
             />
-            <select
-              value={selected.type}
-              onChange={(e) => updateObject(selected.id, { type: e.target.value as any })}
-              className="input-dark w-full text-sm"
-            >
-              <option value="cube">Cube</option>
-              <option value="sphere">Sphere</option>
-              <option value="cylinder">Cylinder</option>
-              <option value="plane">Plane</option>
-              <option value="gltf">GLTF Model</option>
-              <option value="obj">OBJ Model</option>
-            </select>
+            <div className="flex gap-1">
+              <button
+                onClick={() => duplicateObject(selected.id)}
+                className="flex-1 text-[10px] py-1 bg-dark-700 rounded border border-dark-500 text-gray-300 hover:text-neon-green hover:border-neon-green/40 transition-colors"
+              >
+                Копировать
+              </button>
+              <button
+                onClick={() => toggleVisibility(selected.id)}
+                className="flex-1 text-[10px] py-1 bg-dark-700 rounded border border-dark-500 text-gray-300 hover:text-neon-blue hover:border-neon-blue/40 transition-colors"
+              >
+                {selected.visible ? '👁 Скрыть' : '👁‍🗨 Показать'}
+              </button>
+              <button
+                onClick={() => removeObject(selected.id)}
+                className="flex-1 text-[10px] py-1 bg-dark-700 rounded border border-dark-500 text-gray-300 hover:text-red-400 hover:border-red-400/40 transition-colors"
+              >
+                🗑 Удалить
+              </button>
+            </div>
           </div>
 
           <Vec3Input
-            label="Position"
+            label="Позиция"
             value={selected.position}
             onChange={(v) => updateObject(selected.id, { position: v })}
           />
 
           <Vec3Input
-            label="Rotation"
+            label="Поворот"
             value={selected.rotation}
             onChange={(v) => updateObject(selected.id, { rotation: v })}
             min={-360}
@@ -109,7 +110,7 @@ export default function PropertyPanel() {
           />
 
           <Vec3Input
-            label="Scale"
+            label="Масштаб"
             value={selected.scale}
             onChange={(v) => updateObject(selected.id, { scale: v })}
             min={0.1}
@@ -118,7 +119,7 @@ export default function PropertyPanel() {
           />
 
           <div className="space-y-1">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Color</span>
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Цвет</span>
             <div className="flex gap-2 items-center">
               <input
                 type="color"
@@ -135,7 +136,7 @@ export default function PropertyPanel() {
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Quick Colors</span>
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Быстрые цвета</span>
             <div className="flex gap-1 flex-wrap">
               {['#39ff14', '#00f0ff', '#bf00ff', '#ff00ff', '#ff3366', '#ffaa00', '#ffffff', '#333333'].map((c) => (
                 <button
@@ -147,10 +148,24 @@ export default function PropertyPanel() {
               ))}
             </div>
           </div>
+
+          <div className="space-y-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Тип</span>
+            <select
+              value={selected.type}
+              onChange={(e) => updateObject(selected.id, { type: e.target.value as any })}
+              className="input-dark w-full text-sm"
+            >
+              <option value="cube">Куб</option>
+              <option value="sphere">Сфера</option>
+              <option value="cylinder">Цилиндр</option>
+              <option value="plane">Плоскость</option>
+            </select>
+          </div>
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs text-dark-500 text-center px-4">Select an object to edit its properties</p>
+          <p className="text-xs text-dark-500 text-center px-4">Выбери объект для редактирования</p>
         </div>
       )}
     </div>

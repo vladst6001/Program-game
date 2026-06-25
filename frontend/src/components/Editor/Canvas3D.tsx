@@ -1,13 +1,12 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, GizmoHelper, GizmoViewport, Environment } from '@react-three/drei';
+import { OrbitControls, Grid, GizmoHelper, GizmoViewport, TransformControls } from '@react-three/drei';
 import * as THREE from 'three';
+import { useRef, useEffect } from 'react';
 import { useEditorStore, EditorObject } from '../../store/editorStore';
-import ModelLoader from './ModelLoader';
 
 function SceneObject({ obj }: { obj: EditorObject }) {
   const selectedId = useEditorStore((s) => s.selectedObjectId);
   const selectObject = useEditorStore((s) => s.selectObject);
-  const updateObject = useEditorStore((s) => s.updateObject);
   const isSelected = selectedId === obj.id;
 
   if (!obj.visible) return null;
@@ -19,31 +18,12 @@ function SceneObject({ obj }: { obj: EditorObject }) {
 
   const geo = (() => {
     switch (obj.type) {
-      case 'cube':
-        return <boxGeometry args={[1, 1, 1]} />;
-      case 'sphere':
-        return <sphereGeometry args={[0.5, 32, 32]} />;
-      case 'cylinder':
-        return <cylinderGeometry args={[0.5, 0.5, 1, 32]} />;
-      case 'plane':
-        return <planeGeometry args={[1, 1]} />;
-      default:
-        return <boxGeometry args={[1, 1, 1]} />;
+      case 'sphere': return <sphereGeometry args={[0.5, 32, 32]} />;
+      case 'cylinder': return <cylinderGeometry args={[0.5, 0.5, 1, 32]} />;
+      case 'plane': return <planeGeometry args={[1, 1]} />;
+      default: return <boxGeometry args={[1, 1, 1]} />;
     }
   })();
-
-  if (obj.type === 'gltf' || obj.type === 'obj') {
-    return (
-      <ModelLoader
-        url={obj.modelUrl!}
-        position={obj.position}
-        rotation={obj.rotation}
-        scale={obj.scale}
-        isSelected={isSelected}
-        onClick={handleClick}
-      />
-    );
-  }
 
   return (
     <group position={obj.position} rotation={obj.rotation} scale={obj.scale}>
@@ -67,6 +47,16 @@ function SceneObject({ obj }: { obj: EditorObject }) {
   );
 }
 
+function Gizmo() {
+  const selectedId = useEditorStore((s) => s.selectedObjectId);
+  if (!selectedId) return null;
+  return (
+    <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+      <GizmoViewport />
+    </GizmoHelper>
+  );
+}
+
 export default function Canvas3D() {
   const objects = useEditorStore((s) => s.objects);
   const selectObject = useEditorStore((s) => s.selectObject);
@@ -79,33 +69,27 @@ export default function Canvas3D() {
       className="bg-dark-900"
     >
       <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <pointLight position={[-10, -10, -5]} intensity={0.3} color="#00f0ff" />
+      <directionalLight position={[10, 10, 5]} intensity={0.8} />
+      <pointLight position={[-5, 5, -5]} intensity={0.3} color="#0066ff" />
 
       <Grid
-        args={[100, 100]}
+        args={[20, 20]}
         cellSize={1}
         cellThickness={0.5}
         cellColor="#252532"
         sectionSize={5}
         sectionThickness={1}
         sectionColor="#353548"
-        fadeDistance={50}
-        fadeStrength={1}
-        followCamera={false}
+        fadeDistance={25}
+        infiniteGrid
       />
 
       {objects.map((obj) => (
         <SceneObject key={obj.id} obj={obj} />
       ))}
 
-      <OrbitControls makeDefault enableDamping dampingFactor={0.05} />
-
-      <GizmoHelper alignment="bottom-right" margin={[60, 60]}>
-        <GizmoViewport />
-      </GizmoHelper>
-
-      <Environment preset="city" />
+      <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
+      <Gizmo />
     </Canvas>
   );
 }

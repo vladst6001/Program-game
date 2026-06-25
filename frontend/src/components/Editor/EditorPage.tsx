@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useEditorStore } from '../../store/editorStore';
 import { useAuthStore } from '../../store/authStore';
@@ -8,16 +8,17 @@ import ObjectPanel from './ObjectPanel';
 import PropertyPanel from './PropertyPanel';
 import Canvas3D from './Canvas3D';
 import Canvas2D from './Canvas2D';
+import CodePanel from '../BlockEditor/CodePanel';
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const mode = useEditorStore((s) => s.mode);
   const setGameName = useEditorStore((s) => s.setGameName);
   const loadObjects = useEditorStore((s) => s.loadObjects);
   const setGameCode = useEditorStore((s) => s.setGameCode);
   const autoRegister = useAuthStore((s) => s.autoRegister);
   const [ready, setReady] = useState(false);
+  const [showCode, setShowCode] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -44,9 +45,7 @@ export default function EditorPage() {
             })));
           }
           setGameCode(code);
-        } catch {
-          // Game not found - stay on editor with empty scene
-        }
+        } catch {}
       }
       setReady(true);
     };
@@ -63,7 +62,7 @@ export default function EditorPage() {
 
   return (
     <div className="h-screen flex flex-col bg-dark-900">
-      <Toolbar />
+      <Toolbar onToggleCode={() => setShowCode(!showCode)} showCode={showCode} />
       <div className="flex flex-1 overflow-hidden">
         <ObjectPanel />
         <div className="flex-1 relative">
@@ -71,6 +70,7 @@ export default function EditorPage() {
         </div>
         <PropertyPanel />
       </div>
+      {showCode && <CodePanel />}
     </div>
   );
 }
