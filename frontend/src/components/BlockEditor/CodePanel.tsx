@@ -1,49 +1,6 @@
-import { useState, useCallback, useEffect, Component, ReactNode } from 'react';
+import { useState, useCallback } from 'react';
+import BlocklyWorkspace from './BlocklyWorkspace';
 import CodeEditor from './CodeEditor';
-
-class BlocklyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex items-center justify-center h-full text-gray-500 text-sm p-4 text-center">
-          Блок-редактор недоступен. Используйте вкладку "Код" для написания кода вручную.
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-const LazyBlockly = ({ onCodeGenerated }: { onCodeGenerated: (code: string) => void }) => {
-  const [BlocklyWS, setBlocklyWS] = useState<any>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    import('./BlocklyWorkspace')
-      .then((mod) => setBlocklyWS(() => mod.default))
-      .catch(() => setError(true));
-  }, []);
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-500 text-sm p-4 text-center">
-        Блок-редактор недоступен. Используйте вкладку "Код".
-      </div>
-    );
-  }
-
-  if (!BlocklyWS) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-neon-green animate-pulse text-sm">Загрузка блоков...</div>
-      </div>
-    );
-  }
-
-  return <BlocklyWS onCodeGenerated={onCodeGenerated} />;
-};
 
 type Tab = 'blocks' | 'code';
 
@@ -85,9 +42,7 @@ export default function CodePanel() {
       {expanded && (
         <div className="flex-1 overflow-hidden">
           {tab === 'blocks' ? (
-            <BlocklyErrorBoundary>
-              <LazyBlockly onCodeGenerated={handleCodeGenerated} />
-            </BlocklyErrorBoundary>
+            <BlocklyWorkspace onCodeGenerated={handleCodeGenerated} />
           ) : (
             <CodeEditor />
           )}
