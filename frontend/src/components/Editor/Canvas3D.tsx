@@ -28,7 +28,7 @@ function SelectableObject({ obj }: { obj: EditorObject }) {
       case 'plane': return <planeGeometry args={[1, 1]} />;
       case 'floor': return <boxGeometry args={[4, 0.1, 4]} />;
       case 'wall': return <boxGeometry args={[4, 3, 0.2]} />;
-      case 'stair': return <boxGeometry args={[1, 2, 2]} />;
+      case 'stair': return <boxGeometry args={[2, 1.5, 2]} />;
       default: return <boxGeometry args={[1, 1, 1]} />;
     }
   })();
@@ -64,16 +64,31 @@ function SelectableObject({ obj }: { obj: EditorObject }) {
     <DreiTransformControls
       object={meshRef as any}
       mode={mode as any}
-      size={0.7}
+      size={1}
+      translationSnap={0.5}
+      rotationSnap={15 * Math.PI / 180}
+      scaleSnap={0.1}
       onObjectChange={() => {
         if (!meshRef.current) return;
         const pos = meshRef.current.position;
         const rot = meshRef.current.rotation;
         const scl = meshRef.current.scale;
         updateObject(obj.id, {
-          position: [pos.x, pos.y, pos.z],
-          rotation: [rot.x * 180 / Math.PI, rot.y * 180 / Math.PI, rot.z * 180 / Math.PI],
-          scale: [scl.x, scl.y, scl.z],
+          position: [
+            Math.round(pos.x * 2) / 2,
+            Math.round(pos.y * 2) / 2,
+            Math.round(pos.z * 2) / 2,
+          ],
+          rotation: [
+            Math.round(rot.x * 180 / Math.PI / 15) * 15,
+            Math.round(rot.y * 180 / Math.PI / 15) * 15,
+            Math.round(rot.z * 180 / Math.PI / 15) * 15,
+          ],
+          scale: [
+            Math.round(scl.x * 10) / 10,
+            Math.round(scl.y * 10) / 10,
+            Math.round(scl.z * 10) / 10,
+          ],
         });
       }}
     >

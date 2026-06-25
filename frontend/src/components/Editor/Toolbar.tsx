@@ -143,7 +143,7 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
         <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[120px]">
           <button onClick={() => handleAddObject('floor', { name: 'Пол', scale: [10, 0.1, 10], color: '#555555' })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green">🟫 Пол</button>
           <button onClick={() => handleAddObject('wall', { name: 'Стена', scale: [4, 3, 0.2], color: '#8B4513' })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green">🧱 Стена</button>
-          <button onClick={() => handleAddObject('stair', { name: 'Лестница', scale: [1, 2, 2], color: '#DEB887' })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green">🪜 Лестница</button>
+          <button onClick={() => handleAddObject('stair', { name: 'Лестница', scale: [2, 1.5, 2], color: '#DEB887' })} className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green">🪜 Лестница</button>
         </div>
       </div>
 
