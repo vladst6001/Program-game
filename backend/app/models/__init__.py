@@ -1,6 +1,6 @@
 from app.database import Base
 from app.models.user import User
-from app.models.game import Game, GameLike
+from app.models.game import Game, GameLike, GamePurchase
 from app.models.sprite import Sprite
 from app.models.friend import Friend
 from app.models.message import Message
@@ -13,6 +13,7 @@ __all__ = [
     "User",
     "Game",
     "GameLike",
+    "GamePurchase",
     "Sprite",
     "Friend",
     "Message",

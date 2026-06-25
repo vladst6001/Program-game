@@ -64,10 +64,7 @@ function SelectableObject({ obj }: { obj: EditorObject }) {
     <DreiTransformControls
       object={meshRef as any}
       mode={mode as any}
-      size={1}
-      translationSnap={0.5}
-      rotationSnap={15 * Math.PI / 180}
-      scaleSnap={0.1}
+      size={1.2}
       onObjectChange={() => {
         if (!meshRef.current) return;
         const pos = meshRef.current.position;
@@ -75,19 +72,19 @@ function SelectableObject({ obj }: { obj: EditorObject }) {
         const scl = meshRef.current.scale;
         updateObject(obj.id, {
           position: [
-            Math.round(pos.x * 2) / 2,
-            Math.round(pos.y * 2) / 2,
-            Math.round(pos.z * 2) / 2,
+            Math.round(pos.x * 100) / 100,
+            Math.round(pos.y * 100) / 100,
+            Math.round(pos.z * 100) / 100,
           ],
           rotation: [
-            Math.round(rot.x * 180 / Math.PI / 15) * 15,
-            Math.round(rot.y * 180 / Math.PI / 15) * 15,
-            Math.round(rot.z * 180 / Math.PI / 15) * 15,
+            Math.round(rot.x * 180 / Math.PI * 10) / 10,
+            Math.round(rot.y * 180 / Math.PI * 10) / 10,
+            Math.round(rot.z * 180 / Math.PI * 10) / 10,
           ],
           scale: [
-            Math.round(scl.x * 10) / 10,
-            Math.round(scl.y * 10) / 10,
-            Math.round(scl.z * 10) / 10,
+            Math.round(scl.x * 100) / 100,
+            Math.round(scl.y * 100) / 100,
+            Math.round(scl.z * 100) / 100,
           ],
         });
       }}

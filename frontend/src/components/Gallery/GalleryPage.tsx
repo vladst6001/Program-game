@@ -85,9 +85,10 @@ export default function GalleryPage() {
   }, []);
 
   const filteredGames = games.filter((g) => {
+    if (g.is_hidden) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return g.name.toLowerCase().includes(q) || g.author_id.toLowerCase().includes(q);
+    return g.name.toLowerCase().includes(q) || (g.creator_name || '').toLowerCase().includes(q);
   });
 
   const tabClass = (t: typeof tab) =>
@@ -205,11 +206,25 @@ export default function GalleryPage() {
                   <h3 className="text-sm font-medium text-white truncate group-hover:text-neon-green transition-colors">
                     {game.name}
                   </h3>
+                  {game.creator_name && (
+                    <p className="text-[11px] text-gray-500 mt-1 truncate">{game.creator_name}</p>
+                  )}
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-[10px] text-gray-500">
                       {new Date(game.updated_at).toLocaleDateString()}
                     </span>
-                    <span className="text-[10px] text-neon-blue">♥ {game.likes}</span>
+                    <div className="flex items-center gap-2">
+                      {game.price > 0 ? (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-yellow-500/10 text-yellow-400 rounded">
+                          🪙 {game.price}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-neon-green/10 text-neon-green rounded">
+                          Бесплатно
+                        </span>
+                      )}
+                      <span className="text-[10px] text-neon-blue">♥ {game.likes}</span>
+                    </div>
                   </div>
                   {game.is_published && (
                     <span className="inline-block mt-2 text-[9px] px-1.5 py-0.5 bg-neon-green/10 text-neon-green rounded">

@@ -13,6 +13,8 @@ class GameCreate(BaseModel):
 class GameUpdate(BaseModel):
     name: str | None = None
     code: dict | None = None
+    price: int | None = None
+    is_hidden: bool | None = None
 
 
 class GameResponse(BaseModel):
@@ -22,6 +24,9 @@ class GameResponse(BaseModel):
     code: dict = {}
     is_published: bool
     likes: int
+    price: int = 0
+    creator_name: str | None = None
+    is_hidden: bool = False
     created_at: datetime
     updated_at: datetime
 

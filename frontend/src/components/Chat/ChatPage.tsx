@@ -13,12 +13,14 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const connectWs = useCallback(() => {
     const wsBase = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
@@ -67,6 +69,7 @@ export default function ChatPage() {
       wsRef.current?.close();
       wsRef.current = null;
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
     };
   }, [sessionId, connectWs]);
 
@@ -95,42 +98,51 @@ export default function ChatPage() {
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
 
-      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
       recorder.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const formData = new FormData();
-        formData.append('file', blob, 'voice.webm');
-
-        try {
-          const token = localStorage.getItem('token');
-          const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-          const uploadRes = await fetch(`${baseUrl}/api/upload/voice`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-            body: formData,
-          });
-          const { url } = await uploadRes.json();
-
-          const { data } = await messagesApi.sendChatMessage(sessionId!, { voice_url: url });
-          setMessages((prev) => [...prev.slice(-49), data]);
-        } catch {}
-
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = reader.result as string;
+          try {
+            const { data } = await messagesApi.sendChatMessage(sessionId!, { voice_url: base64 });
+            setMessages((prev) => [...prev.slice(-49), data]);
+          } catch {}
+        };
+        reader.readAsDataURL(blob);
         stream.getTracks().forEach((t) => t.stop());
       };
 
       recorder.start();
       setIsRecording(true);
+      setRecordingDuration(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((d) => d + 1);
+      }, 1000);
     } catch {}
   }, [sessionId]);
 
   const stopRecording = useCallback(() => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
     mediaRecorderRef.current?.stop();
     setIsRecording(false);
+    setRecordingDuration(0);
   }, []);
+
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   const formatTime = (ts: string) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -140,8 +152,8 @@ export default function ChatPage() {
         <button onClick={() => navigate('/')} className="text-sm text-gray-400 hover:text-white transition-colors">
           &larr;
         </button>
-        <h1 className="ml-4 text-sm font-bold text-neon-green">Chat</h1>
-        <span className="ml-2 text-[10px] text-dark-500">Session {sessionId?.slice(0, 8)}</span>
+        <h1 className="ml-4 text-sm font-bold text-neon-green">Чат</h1>
+        <span className="ml-2 text-[10px] text-dark-500">Сессия {sessionId?.slice(0, 8)}</span>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-neon-green' : 'bg-gray-500'}`} />
@@ -161,6 +173,7 @@ export default function ChatPage() {
         ) : (
           messages.map((msg) => {
             const isMe = msg.sender_id === user?.id;
+            const isVoice = msg.voice_url && msg.voice_url.startsWith('data:audio');
             return (
               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div
@@ -170,8 +183,32 @@ export default function ChatPage() {
                       : 'bg-dark-700 border border-dark-500 text-gray-300'
                   }`}
                 >
-                  {msg.text && <p>{msg.text}</p>}
-                  {msg.voice_url && (
+                  {msg.text && !isVoice && <p>{msg.text}</p>}
+                  {isVoice && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const audio = new Audio(msg.voice_url!);
+                          audio.play();
+                        }}
+                        className="w-8 h-8 rounded-full bg-neon-green/20 flex items-center justify-center hover:bg-neon-green/30 transition-colors shrink-0"
+                      >
+                        <svg className="w-3 h-3 text-neon-green ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </button>
+                      <div className="flex gap-0.5">
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <div
+                            key={i}
+                            className="w-0.5 bg-neon-green/40 rounded-full"
+                            style={{ height: `${8 + Math.random() * 12}px` }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {!isVoice && msg.voice_url && (
                     <audio controls src={msg.voice_url} className="mt-1 h-8" />
                   )}
                   <span className="block text-[9px] text-gray-600 mt-1">{formatTime(msg.created_at)}</span>
@@ -193,6 +230,24 @@ export default function ChatPage() {
       </div>
 
       <div className="p-4 bg-dark-800 border-t border-dark-500">
+        {isRecording && (
+          <div className="mb-3 flex items-center gap-3 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-xs text-red-400">Запись {formatDuration(recordingDuration)}</span>
+            <div className="flex gap-0.5">
+              {Array.from({ length: 20 }, (_, i) => (
+                <div
+                  key={i}
+                  className="w-0.5 bg-red-400/60 rounded-full animate-pulse"
+                  style={{
+                    height: `${6 + Math.sin(Date.now() / 200 + i) * 8 + Math.random() * 6}px`,
+                    animationDelay: `${i * 50}ms`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex gap-2">
           <button
             onClick={isRecording ? stopRecording : startRecording}
@@ -219,11 +274,12 @@ export default function ChatPage() {
             onChange={(e) => setText(e.target.value)}
             onInput={handleTyping}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Type a message..."
+            placeholder="Напишите сообщение..."
             className="input-dark flex-1"
+            disabled={isRecording}
           />
-          <button onClick={handleSend} disabled={!text.trim()} className="btn-neon text-xs py-1 px-4">
-            Send
+          <button onClick={handleSend} disabled={!text.trim() || isRecording} className="btn-neon text-xs py-1 px-4">
+            Отправить
           </button>
         </div>
       </div>

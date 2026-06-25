@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { gamesApi } from '../../api/games';
+import { gamesApi, Game } from '../../api/games';
 import { useAuthStore } from '../../store/authStore';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Grid } from '@react-three/drei';
@@ -147,9 +147,10 @@ function SceneObjects({ objects, paused }: { objects: GameObject[]; paused: bool
   );
 }
 
-function HUD({ hp, score, gameName, paused, onTogglePause, onBack }: {
-  hp: number; score: number; gameName: string; paused: boolean;
-  onTogglePause: () => void; onBack: () => void;
+function HUD({ hp, score, gameName, coins, creatorName, paused, onTogglePause, onBack, onToggleChat, chatOpen }: {
+  hp: number; score: number; gameName: string; coins: number; creatorName: string | null;
+  paused: boolean; onTogglePause: () => void; onBack: () => void;
+  onToggleChat: () => void; chatOpen: boolean;
 }) {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
@@ -157,18 +158,29 @@ function HUD({ hp, score, gameName, paused, onTogglePause, onBack }: {
         <button onClick={onBack} className="pointer-events-auto px-3 py-1.5 bg-dark-800 border border-dark-500 rounded text-xs text-gray-300 hover:text-neon-green hover:border-neon-green/40 transition-colors">
           ← Выход
         </button>
-        <span className="text-sm font-bold text-neon-green drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]">{gameName}</span>
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-neon-green drop-shadow-[0_0_8px_rgba(57,255,20,0.5)]">{gameName}</span>
+          {creatorName && (
+            <span className="text-[10px] text-gray-500">by {creatorName}</span>
+          )}
+        </div>
       </div>
 
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <span className="text-[10px] text-red-400 font-bold">HP</span>
-        <div className="w-32 h-3 bg-dark-800 rounded-full border border-dark-500 overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-300" style={{
-            width: `${Math.max(0, hp)}%`,
-            background: hp > 50 ? 'linear-gradient(90deg, #39ff14, #00f0ff)' : hp > 25 ? 'linear-gradient(90deg, #ffaa00, #ff6600)' : 'linear-gradient(90deg, #ff3366, #ff0000)',
-          }} />
+      <div className="absolute top-4 right-4 flex items-center gap-4">
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-dark-800 border border-dark-500 rounded">
+          <span className="text-xs">🪙</span>
+          <span className="text-xs font-mono text-yellow-400">{coins}</span>
         </div>
-        <span className="text-xs font-mono text-white">{hp}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-red-400 font-bold">HP</span>
+          <div className="w-32 h-3 bg-dark-800 rounded-full border border-dark-500 overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-300" style={{
+              width: `${Math.max(0, hp)}%`,
+              background: hp > 50 ? 'linear-gradient(90deg, #39ff14, #00f0ff)' : hp > 25 ? 'linear-gradient(90deg, #ffaa00, #ff6600)' : 'linear-gradient(90deg, #ff3366, #ff0000)',
+            }} />
+          </div>
+          <span className="text-xs font-mono text-white">{hp}</span>
+        </div>
       </div>
 
       <div className="absolute top-4 left-1/2 -translate-x-1/2">
@@ -178,6 +190,16 @@ function HUD({ hp, score, gameName, paused, onTogglePause, onBack }: {
       <div className="absolute bottom-4 left-4 flex gap-2">
         <button onClick={onTogglePause} className="pointer-events-auto px-3 py-1.5 bg-dark-800 border border-dark-500 rounded text-xs text-gray-300 hover:text-neon-green hover:border-neon-green/40 transition-colors">
           {paused ? '▶ Продолжить' : '⏸ Пауза'}
+        </button>
+        <button
+          onClick={onToggleChat}
+          className={`pointer-events-auto px-3 py-1.5 rounded text-xs transition-colors ${
+            chatOpen
+              ? 'bg-neon-green/20 border border-neon-green/40 text-neon-green'
+              : 'bg-dark-800 border border-dark-500 text-gray-300 hover:text-neon-green hover:border-neon-green/40'
+          }`}
+        >
+          💬 Чат
         </button>
       </div>
 
@@ -194,16 +216,157 @@ function HUD({ hp, score, gameName, paused, onTogglePause, onBack }: {
   );
 }
 
+function GameChatPanel({ gameId, onClose }: { gameId: string; onClose: () => void }) {
+  const user = useAuthStore((s) => s.user);
+  const [messages, setMessages] = useState<{ id: string; sender: string; text: string; time: string }[]>([]);
+  const [input, setInput] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        sender: user?.name || 'Player',
+        text: trimmed,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+    setInput('');
+  };
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            sender: user?.name || 'Player',
+            text: `🎤 Голосовое сообщение`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+        stream.getTracks().forEach((t) => t.stop());
+      };
+
+      recorder.start();
+      setIsRecording(true);
+    } catch {}
+  }, [user]);
+
+  const stopRecording = useCallback(() => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  }, []);
+
+  return (
+    <div className="absolute bottom-16 right-4 w-80 h-96 bg-dark-800 border border-dark-500 rounded-xl flex flex-col z-30 shadow-2xl pointer-events-auto">
+      <div className="h-10 bg-dark-700 rounded-t-xl flex items-center px-4 border-b border-dark-500">
+        <span className="text-xs font-medium text-neon-green">💬 Чат игры</span>
+        <div className="flex-1" />
+        <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-[10px] text-dark-500">Нет сообщений</p>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id} className="flex flex-col">
+              <div className="bg-dark-700 border border-dark-500 px-3 py-2 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-medium text-neon-blue">{msg.sender}</span>
+                  <span className="text-[9px] text-dark-500">{msg.time}</span>
+                </div>
+                <p className="text-xs text-gray-300">{msg.text}</p>
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      <div className="p-2 border-t border-dark-500">
+        {isRecording && (
+          <div className="mb-2 flex items-center gap-2 px-2 py-1 bg-red-500/10 border border-red-500/20 rounded">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-[10px] text-red-400">Запись...</span>
+          </div>
+        )}
+        <div className="flex gap-1">
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0 ${
+              isRecording
+                ? 'bg-red-500/20 border border-red-500/40 text-red-400'
+                : 'bg-dark-700 border border-dark-500 text-gray-400 hover:text-white'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              {isRecording ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              )}
+            </svg>
+          </button>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Сообщение..."
+            className="flex-1 bg-dark-700 text-white text-xs px-3 py-1.5 rounded-lg border border-dark-500 outline-none focus:border-neon-green/40 placeholder-gray-600"
+            disabled={isRecording}
+          />
+          <button onClick={handleSend} disabled={!input.trim() || isRecording} className="px-2 py-1.5 bg-neon-green/20 border border-neon-green/30 rounded-lg text-neon-green text-xs hover:bg-neon-green/30 transition-colors disabled:opacity-30">
+            →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PlayPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [game, setGame] = useState<any>(null);
+  const [game, setGame] = useState<Game | null>(null);
   const [error, setError] = useState('');
   const [hp, setHp] = useState(100);
   const [score, setScore] = useState(0);
   const [paused, setPaused] = useState(false);
   const [collisionMessage, setCollisionMessage] = useState<string | null>(null);
+  const [coins, setCoins] = useState(100);
+  const [creatorName, setCreatorName] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const autoRegister = useAuthStore((s) => s.autoRegister);
+  const user = useAuthStore((s) => s.user);
   const keysRef = useRef(new Set<string>());
   const lastCollisionRef = useRef('');
 
@@ -213,6 +376,20 @@ export default function PlayPage() {
       try {
         const { data } = await gamesApi.get(id!);
         setGame(data);
+
+        if (data.price > 0) {
+          try {
+            const { data: payResult } = await gamesApi.pay(id!);
+            if (!payResult.already_purchased && payResult.coins_left !== undefined) {
+              setCoins(payResult.coins_left);
+            }
+          } catch {}
+        }
+
+        try {
+          const { data: creator } = await gamesApi.getCreator(id!);
+          setCreatorName(creator.creator_name);
+        } catch {}
       } catch {
         setError('Игра не найдена');
       }
@@ -221,15 +398,31 @@ export default function PlayPage() {
   }, [id]);
 
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data } = await (await import('../../api/auth')).authApi.me();
+        if (data.coins !== undefined) setCoins(data.coins);
+      } catch {}
+    };
+    if (user) fetchUser();
+  }, [user]);
+
+  useEffect(() => {
     const kd = (e: KeyboardEvent) => {
       keysRef.current.add(e.key.toLowerCase());
-      if (e.key === 'Escape') setPaused((p) => !p);
+      if (e.key === 'Escape') {
+        if (chatOpen) {
+          setChatOpen(false);
+        } else {
+          setPaused((p) => !p);
+        }
+      }
     };
     const ku = (e: KeyboardEvent) => keysRef.current.delete(e.key.toLowerCase());
     window.addEventListener('keydown', kd);
     window.addEventListener('keyup', ku);
     return () => { window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); };
-  }, []);
+  }, [chatOpen]);
 
   if (error) return <div className="h-screen flex items-center justify-center bg-dark-900"><div className="text-center"><p className="text-red-400 text-lg mb-4">{error}</p><button onClick={() => navigate('/')} className="btn-neon">← Назад в галерею</button></div></div>;
   if (!game) return <div className="h-screen flex items-center justify-center bg-dark-900 text-neon-green animate-pulse">Загрузка...</div>;
@@ -251,11 +444,21 @@ export default function PlayPage() {
 
   return (
     <div className="h-screen relative bg-dark-900 overflow-hidden">
-      <HUD hp={hp} score={score} gameName={game.name} paused={paused} onTogglePause={() => setPaused(!paused)} onBack={() => navigate('/')} />
+      <HUD
+        hp={hp} score={score} gameName={game.name}
+        coins={coins} creatorName={creatorName}
+        paused={paused} onTogglePause={() => setPaused(!paused)}
+        onBack={() => navigate('/')}
+        onToggleChat={() => setChatOpen(!chatOpen)}
+        chatOpen={chatOpen}
+      />
       {collisionMessage && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-neon-green/20 border border-neon-green/40 rounded-lg">
           <span className="text-sm font-bold text-neon-green">{collisionMessage}</span>
         </div>
+      )}
+      {chatOpen && (
+        <GameChatPanel gameId={game.id} onClose={() => setChatOpen(false)} />
       )}
       <Canvas camera={{ position: [0, 4, 8], fov: 60 }} gl={{ antialias: true }} shadows style={{ width: '100%', height: '100%' }}>
         <ambientLight intensity={0.4} />

@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +12,11 @@ from app.models.user import User
 from app.schemas.friend import FriendAddRequest, FriendListResponse, FriendResponse
 
 router = APIRouter(prefix="/api/friends", tags=["friends"])
+
+
+class VoiceMessageRequest(BaseModel):
+    to_user_id: str
+    voice_data: str
 
 
 @router.post("/add", status_code=status.HTTP_201_CREATED)
@@ -146,3 +152,30 @@ async def list_friends(
             )
 
     return FriendListResponse(friends=friends)
+
+
+@router.post("/messages/voice")
+async def send_voice_message(
+    request: VoiceMessageRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    from app.models.message import Message
+
+    target_result = await db.execute(select(User).where(User.id == request.to_user_id))
+    target_user = target_result.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    message = Message(from_user=user.id, to_user=request.to_user_id, text=request.voice_data)
+    db.add(message)
+    await db.flush()
+    await db.refresh(message)
+
+    return {
+        "id": message.id,
+        "from_user": message.from_user,
+        "to_user": message.to_user,
+        "voice_data": message.text,
+        "created_at": message.created_at.isoformat(),
+    }

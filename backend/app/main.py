@@ -5,6 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine
 from app.models import Base
+from app.models.user import User
+from app.models.game import Game, GameLike, GamePurchase
+from app.models.sprite import Sprite
+from app.models.friend import Friend
+from app.models.message import Message
+from app.models.game_session import GameSession
+from app.models.chat_message import ChatMessage
+from app.models.tutorial import Tutorial, TutorialProgress
 from app.routers import (
     auth,
     friends,
@@ -29,7 +37,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Telegram Game Platform",
     description="Backend API for Telegram Mini App game creation platform",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -54,4 +62,4 @@ app.include_router(ws)
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "2.0.0"}

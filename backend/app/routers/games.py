@@ -5,7 +5,7 @@ import json
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
-from app.models.game import Game, GameLike
+from app.models.game import Game, GameLike, GamePurchase
 from app.models.user import User
 from app.schemas.game import (
     GameCreate,
@@ -24,7 +24,7 @@ async def create_game(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    game = Game(name=request.name, author_id=user.id)
+    game = Game(name=request.name, author_id=user.id, creator_name=user.name)
     db.add(game)
     user.games_count += 1
     await db.flush()
@@ -74,6 +74,10 @@ async def update_game(
         game.name = request.name
     if request.code is not None:
         game.code = json.dumps(request.code)
+    if request.price is not None:
+        game.price = request.price
+    if request.is_hidden is not None:
+        game.is_hidden = request.is_hidden
 
     await db.flush()
     await db.refresh(game)
@@ -180,3 +184,63 @@ async def get_likes(
     liked = existing.scalar_one_or_none() is not None
 
     return {"likes": game.likes, "liked": liked}
+
+
+@router.post("/{game_id}/pay")
+async def pay_to_play(
+    game_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Game).where(Game.id == game_id))
+    game = result.scalar_one_or_none()
+    if not game:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
+
+    if game.price <= 0:
+        return {"success": True, "message": "Game is free", "already_purchased": False}
+
+    purchase_check = await db.execute(
+        select(GamePurchase).where(
+            GamePurchase.user_id == user.id,
+            GamePurchase.game_id == game_id,
+        )
+    )
+    if purchase_check.scalar_one_or_none():
+        return {"success": True, "message": "Already purchased", "already_purchased": True}
+
+    if user.coins < game.price:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Not enough coins. Need {game.price}, have {user.coins}",
+        )
+
+    user.coins -= game.price
+    purchase = GamePurchase(user_id=user.id, game_id=game_id)
+    db.add(purchase)
+    await db.flush()
+
+    return {"success": True, "message": "Purchased", "coins_left": user.coins, "already_purchased": False}
+
+
+@router.get("/{game_id}/creator")
+async def get_game_creator(
+    game_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Game).where(Game.id == game_id))
+    game = result.scalar_one_or_none()
+    if not game:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
+
+    user_result = await db.execute(select(User).where(User.id == game.author_id))
+    creator = user_result.scalar_one_or_none()
+    if not creator:
+        return {"creator_name": game.creator_name, "creator_id": game.author_id}
+
+    return {
+        "creator_id": creator.id,
+        "creator_name": creator.name,
+        "bio": creator.bio,
+        "games_count": creator.games_count,
+    }

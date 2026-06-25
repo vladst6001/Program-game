@@ -13,7 +13,12 @@ router = APIRouter(prefix="/api/gallery", tags=["gallery"])
 
 @router.get("/popular")
 async def list_popular_games(db: AsyncSession = Depends(get_db)):
-    query = select(Game).where(Game.is_published == True).order_by(Game.likes.desc()).limit(20)
+    query = (
+        select(Game)
+        .where(Game.is_published == True, Game.is_hidden == False)
+        .order_by(Game.likes.desc())
+        .limit(20)
+    )
     result = await db.execute(query)
     games = result.scalars().all()
     return {"games": [GameResponse.model_validate(g).model_dump() for g in games]}
@@ -21,7 +26,12 @@ async def list_popular_games(db: AsyncSession = Depends(get_db)):
 
 @router.get("/recent")
 async def list_recent_games(db: AsyncSession = Depends(get_db)):
-    query = select(Game).where(Game.is_published == True).order_by(Game.created_at.desc()).limit(20)
+    query = (
+        select(Game)
+        .where(Game.is_published == True, Game.is_hidden == False)
+        .order_by(Game.created_at.desc())
+        .limit(20)
+    )
     result = await db.execute(query)
     games = result.scalars().all()
     return {"games": [GameResponse.model_validate(g).model_dump() for g in games]}
@@ -34,7 +44,7 @@ async def list_published_games(
     search: str = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(Game).where(Game.is_published == True)
+    query = select(Game).where(Game.is_published == True, Game.is_hidden == False)
 
     if search:
         query = query.join(User, Game.author_id == User.id).where(
@@ -77,6 +87,7 @@ async def copy_game(
         name=f"{original.name} (Copy)",
         author_id=user.id,
         code=original.code,
+        creator_name=user.name,
     )
     db.add(copy)
     user.games_count += 1
