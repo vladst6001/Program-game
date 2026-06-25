@@ -6,7 +6,7 @@ export type EditorMode = '2d' | '3d';
 export interface EditorObject {
   id: string;
   name: string;
-  type: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'gltf' | 'obj' | 'group';
+  type: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'floor' | 'wall' | 'stair' | 'gltf' | 'obj' | 'group';
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];

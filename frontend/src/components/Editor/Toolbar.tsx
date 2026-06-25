@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useEditorStore } from '../../store/editorStore';
+import { useEditorStore, EditorObject } from '../../store/editorStore';
 import { gamesApi } from '../../api/games';
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
@@ -20,14 +20,20 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
   const setGameName = useEditorStore((s) => s.setGameName);
   const [saving, setSaving] = useState(false);
 
-  const handleAddObject = (type: 'cube' | 'sphere' | 'cylinder' | 'plane') => {
+  const handleAddObject = (type: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'floor' | 'wall' | 'stair', color?: string) => {
+    const presets: Record<string, Partial<EditorObject>> = {
+      floor: { name: 'Пол', scale: [4, 0.1, 4], position: [0, 0, 0], color: color || '#8B4513' },
+      wall: { name: 'Стена', scale: [4, 3, 0.2], position: [0, 1.5, 0], color: color || '#A0522D' },
+      stair: { name: 'Лестница', scale: [1, 2, 2], position: [0, 1, 0], color: color || '#654321' },
+    };
+    const preset = presets[type] || {};
     addObject({
-      name: `New ${type}`,
+      name: preset.name || `New ${type}`,
       type,
-      position: [0, 0, 0],
+      position: preset.position || [0, 0, 0],
       rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-      color: '#39ff14',
+      scale: preset.scale || [1, 1, 1],
+      color: preset.color || color || '#39ff14',
       visible: true,
     });
   };
@@ -106,6 +112,44 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
               className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green capitalize transition-colors"
             >
               {type === 'cube' ? 'Куб' : type === 'sphere' ? 'Сфера' : type === 'cylinder' ? 'Цилиндр' : 'Плоскость'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative group">
+        <button className="btn-neon text-xs py-1">+ Здание</button>
+        <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[120px]">
+          {(['floor', 'wall', 'stair'] as const).map((type) => (
+            <button
+              key={type}
+              onClick={() => handleAddObject(type)}
+              className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green capitalize transition-colors"
+            >
+              {type === 'floor' ? 'Пол' : type === 'wall' ? 'Стена' : 'Лестница'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative group">
+        <button className="btn-neon text-xs py-1">Текстура</button>
+        <div className="absolute top-full left-0 mt-1 bg-dark-700 border border-dark-500 rounded-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 min-w-[100px]">
+          {[
+            { name: 'Кирпич', color: '#A0522D' },
+            { name: 'Бетон', color: '#808080' },
+            { name: 'Дерево', color: '#8B4513' },
+            { name: 'Металл', color: '#708090' },
+            { name: 'Трава', color: '#228B22' },
+            { name: 'Вода', color: '#1E90FF' },
+          ].map((tex) => (
+            <button
+              key={tex.name}
+              onClick={() => handleAddObject('floor', tex.color)}
+              className="block w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-dark-600 hover:text-neon-green transition-colors flex items-center gap-2"
+            >
+              <span className="w-3 h-3 rounded-sm border border-dark-500" style={{ backgroundColor: tex.color }} />
+              {tex.name}
             </button>
           ))}
         </div>

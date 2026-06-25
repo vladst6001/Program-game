@@ -21,6 +21,9 @@ function SceneObject({ obj }: { obj: EditorObject }) {
       case 'sphere': return <sphereGeometry args={[0.5, 32, 32]} />;
       case 'cylinder': return <cylinderGeometry args={[0.5, 0.5, 1, 32]} />;
       case 'plane': return <planeGeometry args={[1, 1]} />;
+      case 'floor': return <boxGeometry args={[4, 0.1, 4]} />;
+      case 'wall': return <boxGeometry args={[4, 3, 0.2]} />;
+      case 'stair': return <boxGeometry args={[1, 2, 2]} />;
       default: return <boxGeometry args={[1, 1, 1]} />;
     }
   })();
@@ -83,6 +86,11 @@ export default function Canvas3D() {
         fadeDistance={25}
         infiniteGrid
       />
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+        <planeGeometry args={[100, 100]} />
+        <meshStandardMaterial color="#1a1a2e" transparent opacity={0.8} />
+      </mesh>
 
       {objects.map((obj) => (
         <SceneObject key={obj.id} obj={obj} />

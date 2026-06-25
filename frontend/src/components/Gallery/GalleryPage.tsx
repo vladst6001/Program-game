@@ -80,8 +80,9 @@ export default function GalleryPage() {
 
   const handlePlay = useCallback((game: Game, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/editor/${game.id}`);
-  }, [navigate]);
+    const url = `${window.location.origin}${window.location.pathname}#/play/${game.id}`;
+    window.open(url, '_blank');
+  }, []);
 
   const filteredGames = games.filter((g) => {
     if (!searchQuery) return true;
