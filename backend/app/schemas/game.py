@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class GameCreate(BaseModel):
@@ -18,13 +19,23 @@ class GameResponse(BaseModel):
     id: str
     name: str
     author_id: str
-    code: dict
+    code: dict = {}
     is_published: bool
     likes: int
     created_at: datetime
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+    @field_validator("code", mode="before")
+    @classmethod
+    def parse_code(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, TypeError):
+                return {}
+        return v or {}
 
 
 class GameListResponse(BaseModel):
