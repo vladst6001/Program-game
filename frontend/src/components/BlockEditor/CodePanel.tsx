@@ -1,4 +1,4 @@
-import { useState, useCallback, Component, ReactNode } from 'react';
+import { useState, useCallback, useEffect, Component, ReactNode } from 'react';
 import CodeEditor from './CodeEditor';
 
 class BlocklyErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -7,8 +7,8 @@ class BlocklyErrorBoundary extends Component<{ children: ReactNode }, { hasError
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-          Блок-редактор недоступен. Используйте вкладку "Код" для написания кода.
+        <div className="flex items-center justify-center h-full text-gray-500 text-sm p-4 text-center">
+          Блок-редактор недоступен. Используйте вкладку "Код" для написания кода вручную.
         </div>
       );
     }
@@ -18,10 +18,21 @@ class BlocklyErrorBoundary extends Component<{ children: ReactNode }, { hasError
 
 const LazyBlockly = ({ onCodeGenerated }: { onCodeGenerated: (code: string) => void }) => {
   const [BlocklyWS, setBlocklyWS] = useState<any>(null);
+  const [error, setError] = useState(false);
 
-  useState(() => {
-    import('./BlocklyWorkspace').then((mod) => setBlocklyWS(() => mod.default));
-  });
+  useEffect(() => {
+    import('./BlocklyWorkspace')
+      .then((mod) => setBlocklyWS(() => mod.default))
+      .catch(() => setError(true));
+  }, []);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500 text-sm p-4 text-center">
+        Блок-редактор недоступен. Используйте вкладку "Код".
+      </div>
+    );
+  }
 
   if (!BlocklyWS) {
     return (
