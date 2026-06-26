@@ -21,6 +21,7 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
   const gameName = useEditorStore((s) => s.gameName);
   const setGameName = useEditorStore((s) => s.setGameName);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const handleAddObject = (type: string, preset?: any) => {
     addObject({
@@ -43,15 +44,20 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
     setSaving(true);
     try {
       const code = exportCode();
-      if (id && id !== 'new') {
-        await gamesApi.update(id, { code });
-      } else {
-        const { data } = await gamesApi.create(gameName || 'Untitled Game');
-        await gamesApi.update(data.id, { code });
+      let gameId = id;
+
+      if (!gameId || gameId === 'new') {
+        const { data } = await gamesApi.create(gameName || 'Новая игра');
+        gameId = data.id;
         navigate(`/editor/${data.id}`, { replace: true });
       }
+
+      await gamesApi.update(gameId!, { code });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (e) {
       console.error('Save failed:', e);
+      alert('Ошибка сохранения: ' + (e as Error).message);
     }
     setSaving(false);
   };
@@ -60,16 +66,20 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
     setSaving(true);
     try {
       const code = exportCode();
-      if (id && id !== 'new') {
-        await gamesApi.update(id, { code });
-        window.open(`${window.location.origin}${window.location.pathname}#/play/${id}`, '_blank');
-      } else {
-        const { data } = await gamesApi.create(gameName || 'Untitled Game');
-        await gamesApi.update(data.id, { code });
-        window.open(`${window.location.origin}${window.location.pathname}#/play/${data.id}`, '_blank');
+      let gameId = id;
+
+      if (!gameId || gameId === 'new') {
+        const { data } = await gamesApi.create(gameName || 'Новая игра');
+        gameId = data.id;
       }
+
+      await gamesApi.update(gameId!, { code });
+
+      const url = `${window.location.origin}${window.location.pathname}#/play/${gameId}`;
+      window.open(url, '_blank');
     } catch (e) {
       console.error('Run failed:', e);
+      alert('Ошибка запуска: ' + (e as Error).message);
     }
     setSaving(false);
   };
@@ -173,7 +183,9 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
 
       <div className="flex-1" />
 
-      <button onClick={handleSave} disabled={saving} className="btn-neon text-xs py-1">{saving ? '...' : '💾 Save'}</button>
+      <button onClick={handleSave} disabled={saving} className="btn-neon text-xs py-1">
+        {saving ? '...' : saved ? '✓ Сохранено' : '💾 Save'}
+      </button>
       <button onClick={handleRun} disabled={saving} className="bg-neon-green text-dark-900 text-xs py-1 px-3 rounded font-bold hover:bg-neon-green/80 transition-colors">▶ Запуск</button>
     </div>
   );
