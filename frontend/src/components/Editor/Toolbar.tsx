@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEditorStore, ToolMode } from '../../store/editorStore';
+import { useAuthStore } from '../../store/authStore';
 import { gamesApi } from '../../api/games';
 import { useParams } from 'react-router-dom';
 import { useState } from 'react';
@@ -20,6 +21,7 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
   const exportCode = useEditorStore((s) => s.exportCode);
   const gameName = useEditorStore((s) => s.gameName);
   const setGameName = useEditorStore((s) => s.setGameName);
+  const autoRegister = useAuthStore((s) => s.autoRegister);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -43,6 +45,7 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      if (!useAuthStore.getState().token) await autoRegister();
       const code = exportCode();
       let gameId = id;
 
@@ -65,6 +68,7 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
   const handleRun = async () => {
     setSaving(true);
     try {
+      if (!useAuthStore.getState().token) await autoRegister();
       const code = exportCode();
       let gameId = id;
 
