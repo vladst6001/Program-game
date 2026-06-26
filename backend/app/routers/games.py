@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import json
 
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, get_optional_user
 from app.models.game import Game, GameLike, GamePurchase
 from app.models.user import User
 from app.schemas.game import (
@@ -34,12 +34,17 @@ async def create_game(
 
 @router.get("", response_model=GameListResponse)
 async def list_my_games(
-    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
 ):
-    result = await db.execute(
-        select(Game).where(Game.author_id == user.id).order_by(Game.created_at.desc())
-    )
+    if user:
+        result = await db.execute(
+            select(Game).where(Game.author_id == user.id).order_by(Game.created_at.desc())
+        )
+    else:
+        result = await db.execute(
+            select(Game).where(Game.is_published == True).order_by(Game.created_at.desc())
+        )
     games = result.scalars().all()
     return GameListResponse(games=games)
 
