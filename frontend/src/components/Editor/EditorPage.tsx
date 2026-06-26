@@ -9,6 +9,7 @@ import PropertyPanel from './PropertyPanel';
 import Canvas3D from './Canvas3D';
 import Canvas2D from './Canvas2D';
 import CodePanel from '../BlockEditor/CodePanel';
+import AIPanel from '../AI/AIPanel';
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,7 @@ export default function EditorPage() {
   const autoRegister = useAuthStore((s) => s.autoRegister);
   const [ready, setReady] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [showAI, setShowAI] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -46,7 +48,7 @@ export default function EditorPage() {
               hp: o.hp ?? 100,
               speed: o.speed ?? 5,
               tag: o.tag ?? '',
-              role: o.role ?? "object",
+              role: o.role ?? 'object',
             })));
           }
           setGameCode(code);
@@ -67,13 +69,13 @@ export default function EditorPage() {
 
   return (
     <div className="h-screen flex flex-col bg-dark-900">
-      <Toolbar onToggleCode={() => setShowCode(!showCode)} showCode={showCode} />
+      <Toolbar onToggleCode={() => setShowCode(!showCode)} showCode={showCode} onToggleAI={() => setShowAI(!showAI)} showAI={showAI} />
       <div className="flex flex-1 overflow-hidden">
         <ObjectPanel />
         <div className="flex-1 relative">
           {mode === '3d' ? <Canvas3D /> : <Canvas2D />}
         </div>
-        <PropertyPanel />
+        {showAI ? <AIPanel onClose={() => setShowAI(false)} /> : <PropertyPanel />}
       </div>
       {showCode && <CodePanel />}
     </div>

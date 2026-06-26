@@ -8,9 +8,11 @@ import { useState } from 'react';
 interface ToolbarProps {
   onToggleCode?: () => void;
   showCode?: boolean;
+  onToggleAI?: () => void;
+  showAI?: boolean;
 }
 
-export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
+export default function Toolbar({ onToggleCode, showCode, onToggleAI, showAI }: ToolbarProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const mode = useEditorStore((s) => s.mode);
@@ -183,6 +185,9 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
 
       <button onClick={onToggleCode} className={`text-xs px-2 py-1 rounded transition-all ${showCode ? 'bg-neon-green/20 text-neon-green' : 'text-gray-400 hover:text-white'}`}>
         {'</>'} Код
+      </button>
+      <button onClick={onToggleAI} className={`text-xs px-2 py-1 rounded transition-all ${showAI ? 'bg-neon-green/20 text-neon-green' : 'text-gray-400 hover:text-white'}`}>
+        🤖 AI
       </button>
 
       <div className="flex-1" />
