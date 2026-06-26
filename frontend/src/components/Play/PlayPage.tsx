@@ -42,12 +42,14 @@ function GamePlayer({
   onCollision,
   playerObj,
   paused,
+  cameraMode,
 }: {
   keys: React.MutableRefObject<Set<string>>;
   objects: GameObject[];
   onCollision: (obj: GameObject) => void;
   playerObj: GameObject;
   paused: boolean;
+  cameraMode: string;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef(new THREE.Vector3(0, 0, 0));
@@ -99,12 +101,21 @@ function GamePlayer({
       groundedRef.current = true;
     }
 
-    const cameraOffset = new THREE.Vector3(0, 4, 8);
-    const targetPos = mesh.position.clone().add(cameraOffset);
-    camera.position.lerp(targetPos, 0.08);
-    const lookTarget = mesh.position.clone();
-    lookTarget.y += 0.5;
-    camera.lookAt(lookTarget);
+    // Camera modes
+    if (cameraMode === 'follow') {
+      const cameraOffset = new THREE.Vector3(0, 4, 8);
+      const targetPos = mesh.position.clone().add(cameraOffset);
+      camera.position.lerp(targetPos, 0.08);
+      const lookTarget = mesh.position.clone();
+      lookTarget.y += 0.5;
+      camera.lookAt(lookTarget);
+    } else if (cameraMode === 'top') {
+      const targetPos = new THREE.Vector3(mesh.position.x, 15, mesh.position.z);
+      camera.position.lerp(targetPos, 0.05);
+      camera.lookAt(mesh.position);
+    } else if (cameraMode === 'free') {
+      // Free camera - user controls with mouse via OrbitControls
+    }
 
     const playerBox = new THREE.Box3().setFromObject(mesh);
     for (const obj of objects) {
@@ -147,10 +158,11 @@ function SceneObjects({ objects, paused }: { objects: GameObject[]; paused: bool
   );
 }
 
-function HUD({ hp, score, gameName, coins, creatorName, paused, onTogglePause, onBack, onToggleChat, chatOpen }: {
+function HUD({ hp, score, gameName, coins, creatorName, paused, onTogglePause, onBack, onToggleChat, chatOpen, cameraMode, onSetCameraMode }: {
   hp: number; score: number; gameName: string; coins: number; creatorName: string | null;
   paused: boolean; onTogglePause: () => void; onBack: () => void;
   onToggleChat: () => void; chatOpen: boolean;
+  cameraMode: string; onSetCameraMode: (mode: string) => void;
 }) {
   return (
     <div className="absolute inset-0 pointer-events-none z-10">
@@ -203,8 +215,15 @@ function HUD({ hp, score, gameName, coins, creatorName, paused, onTogglePause, o
         </button>
       </div>
 
-      <div className="absolute bottom-4 right-4 text-[10px] text-dark-500">
-        WASD — движение · Пробел — прыжок · Клик — захват
+      <div className="absolute bottom-4 left-4 flex items-center gap-2">
+        <div className="flex gap-1 bg-dark-800 border border-dark-500 rounded p-1">
+          {[{id:'follow',icon:'👁',label:'За персонажем'},{id:'top',icon:'🔽',label:'Сверху'},{id:'free',icon:'🎮',label:'Свободная'}].map((m) => (
+            <button key={m.id} onClick={() => onSetCameraMode(m.id)}
+              className={`pointer-events-auto px-2 py-1 rounded text-[10px] transition-colors ${cameraMode === m.id ? 'bg-neon-green/20 text-neon-green' : 'text-gray-500 hover:text-white'}`}
+              title={m.label}>{m.icon}</button>
+          ))}
+        </div>
+        <span className="text-[10px] text-dark-500">WASD — движение · Пробел — прыжок · 1-3 — камера</span>
       </div>
 
       {paused && (
@@ -365,6 +384,7 @@ export default function PlayPage() {
   const [coins, setCoins] = useState(100);
   const [creatorName, setCreatorName] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [cameraMode, setCameraMode] = useState('follow');
   const autoRegister = useAuthStore((s) => s.autoRegister);
   const user = useAuthStore((s) => s.user);
   const keysRef = useRef(new Set<string>());
@@ -417,6 +437,9 @@ export default function PlayPage() {
           setPaused((p) => !p);
         }
       }
+      if (e.key === '1') setCameraMode('follow');
+      if (e.key === '2') setCameraMode('top');
+      if (e.key === '3') setCameraMode('free');
     };
     const ku = (e: KeyboardEvent) => keysRef.current.delete(e.key.toLowerCase());
     window.addEventListener('keydown', kd);
@@ -451,6 +474,7 @@ export default function PlayPage() {
         onBack={() => navigate('/')}
         onToggleChat={() => setChatOpen(!chatOpen)}
         chatOpen={chatOpen}
+        cameraMode={cameraMode} onSetCameraMode={setCameraMode}
       />
       {collisionMessage && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 px-4 py-2 bg-neon-green/20 border border-neon-green/40 rounded-lg">
@@ -466,7 +490,7 @@ export default function PlayPage() {
         <pointLight position={[0, 5, 0]} intensity={0.5} color="#00f0ff" />
         <Grid args={[40, 40]} cellSize={1} cellColor="#1a1a25" sectionSize={5} sectionColor="#252532" infiniteGrid position={[0, -0.01, 0]} />
         <SceneObjects objects={objects} paused={paused} />
-        <GamePlayer keys={keysRef} objects={objects} onCollision={handleCollision} playerObj={playerObj} paused={paused} />
+        <GamePlayer keys={keysRef} objects={objects} onCollision={handleCollision} playerObj={playerObj} paused={paused} cameraMode={cameraMode} />
       </Canvas>
     </div>
   );

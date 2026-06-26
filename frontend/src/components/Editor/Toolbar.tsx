@@ -36,7 +36,7 @@ export default function Toolbar({ onToggleCode, showCode }: ToolbarProps) {
       hp: 100,
       speed: 5,
       tag: '',
-      isPlayer: false,
+      role: 'object',
     });
   };
 

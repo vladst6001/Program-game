@@ -186,15 +186,17 @@ export default function PropertyPanel() {
           </div>
 
           <div className="space-y-1">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selected.isPlayer}
-                onChange={(e) => updateObject(selected.id, { isPlayer: e.target.checked })}
-                className="w-4 h-4 rounded border-dark-500 bg-dark-700 text-neon-green focus:ring-neon-green/40"
-              />
-              <span className="text-[10px] font-semibold text-neon-green uppercase tracking-wider">🎮 Игрок (WASD + мышь)</span>
-            </label>
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Роль объекта</span>
+            <select
+              value={selected.role || "object"}
+              onChange={(e) => updateObject(selected.id, { role: e.target.value as any })}
+              className="input-dark w-full text-sm"
+            >
+              <option value="object">Обычный объект</option>
+              <option value="player">🎮 Игрок (управление WASD)</option>
+              <option value="npc">🤖 NPC (управляется кодом)</option>
+              <option value="camera">📷 Камера</option>
+            </select>
           </div>
 
           <div className="space-y-1">

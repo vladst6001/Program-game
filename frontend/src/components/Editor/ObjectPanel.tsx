@@ -41,7 +41,7 @@ export default function ObjectPanel() {
       hp: 100,
       speed: 5,
       tag: '',
-      isPlayer: false,
+      role: "object",
     });
     e.target.value = '';
   };

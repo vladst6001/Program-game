@@ -2,11 +2,12 @@ import { create } from 'zustand';
 
 export type EditorMode = '2d' | '3d';
 export type ToolMode = 'translate' | 'rotate' | 'scale';
+export type ObjectRole = 'player' | 'npc' | 'object' | 'camera';
 
 export interface EditorObject {
   id: string;
   name: string;
-  type: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'floor' | 'wall' | 'stair' | 'gltf' | 'obj' | 'group';
+  type: 'cube' | 'sphere' | 'cylinder' | 'plane' | 'floor' | 'wall' | 'stair' | 'camera' | 'gltf' | 'obj' | 'group';
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
@@ -17,7 +18,7 @@ export interface EditorObject {
   hp: number;
   speed: number;
   tag: string;
-  isPlayer: boolean;
+  role: ObjectRole;
 }
 
 interface EditorState {
@@ -49,7 +50,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toolMode: 'translate',
   objects: [],
   selectedObjectId: null,
-  gameName: 'Untitled Game',
+  gameName: 'Новая игра',
   gameCode: {},
 
   setMode: (mode) => set({ mode }),
@@ -83,7 +84,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!obj) return;
     const newId = genId();
     set((s) => ({
-      objects: [...s.objects, { ...obj, id: newId, name: `${obj.name} (copy)`, isPlayer: false }],
+      objects: [...s.objects, { ...obj, id: newId, name: `${obj.name} (копия)`, role: 'object' as ObjectRole }],
       selectedObjectId: newId,
     }));
   },
@@ -109,7 +110,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         hp: o.hp,
         speed: o.speed,
         tag: o.tag,
-        isPlayer: o.isPlayer,
+        role: o.role,
       })),
     };
   },
